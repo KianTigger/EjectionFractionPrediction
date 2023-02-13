@@ -86,7 +86,7 @@ def run(
 
     # Compute mean and std
     # TODO replace echonet with echonet and lvh, but just echonet for now.
-    # mean, std = echonet.utils.get_mean_and_std(echonet.datasets.Echo(root=data_dir, split="train"))
+    # mean, std = echonet.utils.get_mean_and_std(echonet.datasets.EchoDynamic(root=data_dir, split="train"))
     # kwargs = {"target_type": task,
     #           "mean": mean,
     #           "std": std,
@@ -97,12 +97,12 @@ def run(
     # Set up datasets and dataloaders
     dataset = {}
     # TODO again replace echonet with own file/functions.
-    # dataset["train"] = echonet.datasets.Echo(root=data_dir, split="train", **kwargs, pad=12)
+    # dataset["train"] = echonet.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
     # if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
     #     # Subsample patients (used for ablation experiment)
     #     indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
     #     dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
-    # dataset["val"] = echonet.datasets.Echo(root=data_dir, split="val", **kwargs)
+    # dataset["val"] = echonet.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
 
 
 
