@@ -12,6 +12,7 @@ import tqdm
 
 import efpredict
 
+
 @click.command("predict")
 @click.option("--data_dir", type=click.Path(exists=True, file_okay=False), default=None)
 @click.option("--output", type=click.Path(file_okay=False), default=None)
@@ -19,7 +20,6 @@ import efpredict
     sorted(name for name in torchvision.models.video.__dict__
            if name.islower() and not name.startswith("__") and callable(torchvision.models.video.__dict__[name]))),
     default="r2plus1d_18")
-
 @click.option("--weights", type=click.Path(exists=True, dir_okay=False), default=None)
 @click.option("--num_epochs", type=int, default=45)
 @click.option("--lr", type=float, default=1e-4)
@@ -29,14 +29,19 @@ import efpredict
 @click.option("--batch_size", type=int, default=20)
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
-
 def run(
     data_dir=None,
     output=None,
     task="EF",
 
     model_name="r2plus1d_18",
+
+    # UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
     pretrained=True,
+
+    # UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. 
+    # The current behavior is equivalent to passing `weights=R2Plus1D_18_Weights.KINETICS400_V1`. 
+    # You can also use `weights=R2Plus1D_18_Weights.DEFAULT` to get the most up-to-date weights.
     weights=None,
 
     run_test=False,
@@ -60,7 +65,8 @@ def run(
 
     # Set default output directory
     if output is None:
-        output = os.path.join("output", "video", "{}_{}_{}_{}".format(model_name, frames, period, "pretrained" if pretrained else "random"))
+        output = os.path.join("output", "video", "{}_{}_{}_{}".format(
+            model_name, frames, period, "pretrained" if pretrained else "random"))
     os.makedirs(output, exist_ok=True)
 
     # Set device for computations
@@ -68,24 +74,29 @@ def run(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
      # Set up model
-    model = torchvision.models.video.__dict__[model_name](pretrained=pretrained)
+    model = torchvision.models.video.__dict__[
+        model_name](pretrained=pretrained)
+        # model_name](weights="R2Plus1D_18_Weights.DEFAULT") #TODO Should this be changed?
+
 
     # Replaced the last layer with a linear layer with 1 output
     model.fc = torch.nn.Linear(model.fc.in_features, 1)
 
-    model.fc.bias.data[0] = 55.6 # TODO, efpredict repository uses 55.6, but may need to be changed.
+    # TODO, echonet repository uses 55.6, but may need to be changed.
+    model.fc.bias.data[0] = 55.6
 
     # If using GPU, wrap model in DataParallel
     if device.type == "cuda":
         model = torch.nn.DataParallel(model)
     model.to(device)
 
-    if weights is not None: #TODO Check if this is correct - from efpredict repository
+    if weights is not None:  # TODO Check if this is correct - from echonet repository
         checkpoint = torch.load(weights)
         model.load_state_dict(checkpoint['state_dict'])
-    
+
      # Set up optimizer
-    optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
+    optim = torch.optim.SGD(model.parameters(), lr=lr,
+                            momentum=0.9, weight_decay=weight_decay)
     if lr_step_period is None:
         lr_step_period = math.inf
     scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)

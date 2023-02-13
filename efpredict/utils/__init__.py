@@ -12,7 +12,7 @@ import numpy as np
 import torch
 import tqdm
 
-from . import video
+from . import EFPredict
 
 
 def loadvideo(filename: str) -> np.ndarray:
@@ -144,4 +144,4 @@ def latexify():
     matplotlib.rcParams.update(params)
 
 
-__all__ = ["video", "loadvideo", "savevideo", "get_mean_and_std", "bootstrap", "latexify"]
+__all__ = ["EFPredict", "loadvideo", "savevideo", "get_mean_and_std", "bootstrap", "latexify"]
