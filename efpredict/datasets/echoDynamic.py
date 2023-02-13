@@ -150,7 +150,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             self.outcome = [f for (f, k) in zip(self.outcome, keep) if k]
 
     def __getitem__(self, index):
-        # Find filename of video
+        # Find filename of video #TODO change from external and clinical test as I don't have them
         if self.split == "EXTERNAL_TEST":
             video = os.path.join(self.external_test_location, self.fnames[index])
         elif self.split == "CLINICAL_TEST":
