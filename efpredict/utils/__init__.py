@@ -144,4 +144,4 @@ def latexify():
     matplotlib.rcParams.update(params)
 
 
-__all__ = ["EFPredict", "loadvideo", "savevideo", "get_mean_and_std", "bootstrap", "latexify"]
+__all__ = ["EFPredict", "loadvideo", "get_mean_and_std", "bootstrap", "latexify"]

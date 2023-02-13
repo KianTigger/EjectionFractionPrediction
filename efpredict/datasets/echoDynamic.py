@@ -14,14 +14,14 @@ import pandas
 import numpy as np
 import skimage.draw
 import torchvision
-import echonet #TODO change from echonet
+import efpredict
 
 
 class EchoDynamic(torchvision.datasets.VisionDataset):
     """EchoNet-Dynamic Dataset.
 
     Args:
-        root (string): Root directory of dataset (defaults to `echonet.config.DATA_DIR`)
+        root (string): Root directory of dataset (defaults to `efpredict.config.DATA_DIR`)
         split (string): One of {``train'', ``val'', ``test'', ``all'', or ``external_test''}
         target_type (string or list, optional): Type of target to use,
             ``Filename'', ``EF'', ``EDV'', ``ESV'', ``LargeIndex'',
@@ -77,7 +77,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  target_transform=None,
                  external_test_location=None):
         if root is None:
-            root = echonet.config.DATA_DIR #TODO change from echonet
+            root = efpredict.config.DATA_DIR 
 
         super().__init__(root, target_transform=target_transform)
 
@@ -159,7 +159,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             video = os.path.join(self.root, "Videos", self.fnames[index])
 
         # Load video into np.array
-        video = echonet.utils.loadvideo(video).astype(np.float32) #TODO change from echonet
+        video = efpredict.utils.loadvideo(video).astype(np.float32)
 
         # Add simulated noise (black out random pixels)
         # 0 represents black at this point (video has not been normalized yet)
