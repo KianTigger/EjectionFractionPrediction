@@ -10,6 +10,9 @@ import torchvision
 import sklearn.metrics
 import tqdm
 
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+
 import efpredict
 
 
@@ -29,6 +32,9 @@ import efpredict
 @click.option("--batch_size", type=int, default=20)
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
+
+
+
 def run(
     data_dir=None,
     output=None,
@@ -87,6 +93,7 @@ def run(
 
     # If using GPU, wrap model in DataParallel
     # To use across multiple devices, use DistributedDataParallel: https://pytorch.org/tutorials/intermediate/ddp_tutorial.html
+    # https://www.youtube.com/watch?v=-K3bZYHYHEA&list=PL_lsbAsL_o2CSuhUhJIiW0IkdT5C2wGWj
     # TODO Implement DistributedDataParallel
     if device.type == "cuda":
         model = torch.nn.DataParallel(model)
@@ -149,7 +156,7 @@ def run(
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device)
+                loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(model, dataloader, phase == "train", optim, device)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -192,7 +199,7 @@ def run(
                 dataloader = torch.utils.data.DataLoader(
                     efpredict.datasets.Echo(root=data_dir, split=split, **kwargs),
                     batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device)
+                loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(model, dataloader, False, None, device)
                 f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
                 f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
                 f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
@@ -202,7 +209,7 @@ def run(
                 ds = efpredict.datasets.Echo(root=data_dir, split=split, **kwargs, clips="all")
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
+                loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
                 f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
                 f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
                 f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
