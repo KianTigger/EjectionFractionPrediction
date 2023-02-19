@@ -284,6 +284,7 @@ class EFPredictDPP:
         dataset = self._dataset(kwargs)
         
         # Run training and testing loops
+        print("os.path.join(self.output, 'log.csv')", os.path.join(self.output, "log.csv"))
         with open(os.path.join(self.output, "log.csv"), "a") as f:
             print("Starting run")
             epoch_resume = 0
