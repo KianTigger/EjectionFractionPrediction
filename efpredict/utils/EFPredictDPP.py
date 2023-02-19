@@ -88,16 +88,17 @@ class EFPredictDPP:
         device=None,
         seed=0,
     ) -> None:
+        self.model_name = model_name
+        self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
         self.gpu_id = gpu_id
         self.model = model.to(gpu_id)
-        self.train_data = train_data
-        self.optimizer = optimizer
+        # self.train_data = train_data
+        # self.optimizer = optimizer
         self.save_every = save_every
         self.model = DDP(self.model, device_ids=[gpu_id])
         self.data_dir = data_dir
         self.output = output
         self.task = task
-        self.model_name = model_name
         self.pretrained = pretrained
         self.weights = weights
         self.run_test = run_test
@@ -423,7 +424,7 @@ def main(rank: int, world_size: int, save_every: int, batch_size: int):
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
     # trainer = EFPredictDPP(model, train_data, optimizer, save_every)
-    trainer = EFPredictDPP()
+    trainer = EFPredictDPP(gpu_id=rank,)
     trainer.train()
     destroy_process_group()
 
