@@ -56,7 +56,7 @@ def ddp_setup(rank, world_size):
 class EFPredictDPP:
     def __init__(
         self,
-        # model: torch.nn.Module,
+        model: torch.nn.Module,
         # train_data: DataLoader,
         # optimizer: torch.optim.Optimizer,
         gpu_id: int,
@@ -91,7 +91,7 @@ class EFPredictDPP:
         self.model_name = model_name
         self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
         self.gpu_id = gpu_id
-        self.model = torch.nn.Module.to(gpu_id)
+        self.model = self.model.to(gpu_id)
         # self.train_data = train_data
         # self.optimizer = optimizer
         self.save_every = save_every
