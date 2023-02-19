@@ -285,6 +285,7 @@ class EFPredictDPP:
         
         # Run training and testing loops
         with open(os.path.join(self.output, "log.csv"), "a") as f:
+            print("Starting run")
             epoch_resume = 0
             bestLoss = float("inf")
             try:
