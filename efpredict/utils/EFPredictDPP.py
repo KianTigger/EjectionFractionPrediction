@@ -91,7 +91,7 @@ class EFPredictDPP:
         self.model_name = model_name
         self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
         self.gpu_id = gpu_id
-        self.model = model.to(gpu_id)
+        self.model = torch.nn.Module.to(gpu_id)
         # self.train_data = train_data
         # self.optimizer = optimizer
         self.save_every = save_every
