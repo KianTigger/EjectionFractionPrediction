@@ -293,17 +293,18 @@ class EFPredictDPP:
             print("Starting run")
             epoch_resume = 0
             bestLoss = float("inf")
-            try:
-                # Attempt to load checkpoint
-                checkpoint = torch.load(os.path.join(self.output, "checkpoint.pt"))
-                self.model.module.load_state_dict(checkpoint['state_dict'])
-                optim.load_state_dict(checkpoint['opt_dict'])
-                scheduler.load_state_dict(checkpoint['scheduler_dict'])
-                epoch_resume = checkpoint["epoch"] + 1
-                bestLoss = checkpoint["best_loss"]
-                f.write("Resuming from epoch {}\n".format(epoch_resume))
-            except FileNotFoundError:
-                f.write("Starting run from scratch\n")
+            # try:
+            #     # Attempt to load checkpoint
+            #     checkpoint = torch.load(os.path.join(self.output, "checkpoint.pt"))
+            #     self.model.module.load_state_dict(checkpoint['state_dict'])
+            #     optim.load_state_dict(checkpoint['opt_dict'])
+            #     scheduler.load_state_dict(checkpoint['scheduler_dict'])
+            #     epoch_resume = checkpoint["epoch"] + 1
+            #     bestLoss = checkpoint["best_loss"]
+            #     f.write("Resuming from epoch {}\n".format(epoch_resume))
+            # except FileNotFoundError:
+            #     f.write("Starting run from scratch\n")
+            f.write("Starting run from scratch\n")
 
             for epoch in range(epoch_resume, self.num_epochs):
                 print("Epoch #{}".format(epoch), flush=True)
