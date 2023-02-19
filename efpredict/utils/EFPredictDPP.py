@@ -112,7 +112,7 @@ class EFPredictDPP:
         self.batch_size = batch_size
         self.device = device
         self.seed = seed
-    
+
     def _run_epoch(self, model, dataloader, train, optim, device, save_all=False, block_size=None):
         """Run one epoch of training/evaluation for ejection fraction prediction.
 
@@ -420,9 +420,10 @@ def run():
 
 def main(rank: int, world_size: int, save_every: int, batch_size: int):
     ddp_setup(rank, world_size)
-    dataset, model, optimizer = load_train_objs()
-    train_data = prepare_dataloader(dataset, batch_size)
-    trainer = EFPredictDPP(model, train_data, optimizer, rank, save_every)
+    # dataset, model, optimizer = load_train_objs()
+    # train_data = prepare_dataloader(dataset, batch_size)
+    # trainer = EFPredictDPP(model, train_data, optimizer, save_every)
+    trainer = EFPredictDPP()
     trainer.train()
     destroy_process_group()
 
