@@ -431,7 +431,7 @@ def main(rank: int, world_size: int, save_every: int, batch_size: int):
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
     # trainer = EFPredictDPP(model, train_data, optimizer, save_every)
-    trainer = EFPredictDPP(gpu_id=rank,)
+    trainer = EFPredictDPP(gpu_id=rank, device=torch.device('cuda', rank))
     trainer.train()
     destroy_process_group()
 
