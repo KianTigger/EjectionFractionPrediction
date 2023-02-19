@@ -209,15 +209,14 @@ class EFPredictDPP:
         torch.save(save, os.path.join(output, "checkpoint.pt"))
         if loss < bestLoss:
             torch.save(save, os.path.join(output, "best.pt"))
-            bestLoss = loss
     
     def _optimizer_and_scheduler(self):
         # Set up optimizer and scheduler
         optim = torch.optim.SGD(self.model.parameters(), lr=self.lr,
                                 momentum=0.9, weight_decay=self.weight_decay)
-        if lr_step_period is None:
-            lr_step_period = math.inf
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
+        if self.lr_step_period is None:
+            self.lr_step_period = math.inf
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, self.lr_step_period)
         
         return optim, scheduler
 
