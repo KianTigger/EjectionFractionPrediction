@@ -218,8 +218,6 @@ class EFPredictDPP:
         if lr_step_period is None:
             lr_step_period = math.inf
         scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
-
-        
         
         return optim, scheduler
 
@@ -248,9 +246,40 @@ class EFPredictDPP:
 
         return dataset
 
+    def plot_results(self, y, yhat, split):
+        # Plot actual and predicted EF
+        fig = plt.figure(figsize=(3, 3))
+        lower = min(y.min(), yhat.min())
+        upper = max(y.max(), yhat.max())
+        plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
+        plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
+        plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
+        plt.gca().set_aspect("equal", "box")
+        plt.xlabel("Actual EF (%)")
+        plt.ylabel("Predicted EF (%)")
+        plt.xticks([10, 20, 30, 40, 50, 60, 70, 80])
+        plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
+        plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.output, "{}_scatter.pdf".format(split)))
+        plt.close(fig)
+
+        # Plot AUROC
+        fig = plt.figure(figsize=(3, 3))
+        plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
+        for thresh in [35, 40, 45, 50]:
+            fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
+            print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
+            plt.plot(fpr, tpr)
+
+        plt.axis([-0.01, 1.01, -0.01, 1.01])
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.output, "{}_roc.pdf".format(split)))
+        plt.close(fig)
 
     def train(self, max_epochs: int):
-
         optim, scheduler = self._optimizer_and_scheduler()
         kwargs = self._mean_and_std()
         dataset = self._dataset(kwargs)
@@ -279,10 +308,15 @@ class EFPredictDPP:
                         torch.cuda.reset_peak_memory_stats(i)
 
                     ds = dataset[phase]
-                    dataloader = torch.utils.data.DataLoader(
-                        ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train"))
+                    dataloader = prepare_dataloader(ds, self.batch_size, 
+                        num_workers=self.num_workers, shuffle=True, 
+                        pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
+                    # dataloader = torch.utils.data.DataLoader(
+                    #     ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train"))
 
-                    loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(self.model, dataloader, phase == "train", optim, self.device)
+                    # loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(self.model, dataloader, phase == "train", optim, self.device)
+                    loss, yhat, y = self._run_epoch(self.model, dataloader, phase == "train", optim, self.device)
+
                     f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                                 phase,
                                                                 loss,
@@ -299,37 +333,54 @@ class EFPredictDPP:
 
 
             # Load best weights
-            if num_epochs != 0:
-                checkpoint = torch.load(os.path.join(output, "best.pt"))
-                model.module.load_state_dict(checkpoint['state_dict'])
+            if self.num_epochs != 0:
+                checkpoint = torch.load(os.path.join(self.output, "best.pt"))
+                self.model.module.load_state_dict(checkpoint['state_dict'])
                 f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
                 f.flush()
 
-            if run_test:
+            if self.run_test:
                 for split in ["val", "test"]:
-                    # Performance without test-time augmentation
-                    dataloader = torch.utils.data.DataLoader(
-                        efpredict.datasets.Echo(root=data_dir, split=split, **kwargs),
-                        batch_size=batch_size, num_workers=num_workers, shuffle=True, 
-                        pin_memory=(device.type == "cuda"), sampler=DistributedSampler(dataset["train"]) if distributed else None, drop_last=False)
-                    loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(model, dataloader, False, None, device)
+                    # # Performance without test-time augmentation
+                    # dataloader = torch.utils.data.DataLoader(
+                    #     efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs),
+                    #     batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, 
+                    #     pin_memory=(self.device.type == "cuda"), sampler=DistributedSampler(dataset["train"]) if distributed else None, drop_last=False)
+                    
+                    dataset = efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs)
+                    #TODO swap this out for my ds loader.
+                    dataloader = prepare_dataloader(dataset, self.batch_size, 
+                        num_workers=self.num_workers, shuffle=True, 
+                        pin_memory=(self.device.type == "cuda"), drop_last=False) 
+                    
+                    
+                    # loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(self.model, dataloader, False, None, self.device)
+                    loss, yhat, y = self._run_epoch(self.model, dataloader, False, None, self.device)
+
                     f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
                     f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
                     f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
                     f.flush()
 
                     # Performance with test-time augmentation
-                    ds = efpredict.datasets.Echo(root=data_dir, split=split, **kwargs, clips="all")
-                    dataloader = torch.utils.data.DataLoader(
-                        ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
-                    loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
+                    ds = efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs, clips="all")
+                    #TODO swap this out for my ds loader.
+                    
+                    dataloader = prepare_dataloader(ds, 1, 
+                    num_workers=self.num_workers, shuffle=False, 
+                    pin_memory=(self.device.type == "cuda")) 
+                    # dataloader = torch.utils.data.DataLoader(
+                    #     ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
+                    # loss, yhat, y = efpredict.utils.EFPredictDPP.run_epoch(self.model, dataloader, False, None, self.device, save_all=True, block_size=self.batch_size)
+                    loss, yhat, y = self._run_epoch(self.model, dataloader, False, None, self.device, save_all=True, block_size=self.batch_size)
+
                     f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
                     f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
                     f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
                     f.flush()
 
                     # Write full performance to file
-                    with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
+                    with open(os.path.join(self.output, "{}_predictions.csv".format(split)), "w") as g:
                         for (filename, pred) in zip(ds.fnames, yhat):
                             for (i, p) in enumerate(pred):
                                 g.write("{},{},{:.4f}\n".format(filename, i, p))
@@ -337,58 +388,31 @@ class EFPredictDPP:
                     yhat = np.array(list(map(lambda x: x.mean(), yhat)))
 
                     # Plot actual and predicted EF
-                    fig = plt.figure(figsize=(3, 3))
-                    lower = min(y.min(), yhat.min())
-                    upper = max(y.max(), yhat.max())
-                    plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
-                    plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
-                    plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
-                    plt.gca().set_aspect("equal", "box")
-                    plt.xlabel("Actual EF (%)")
-                    plt.ylabel("Predicted EF (%)")
-                    plt.xticks([10, 20, 30, 40, 50, 60, 70, 80])
-                    plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
-                    plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
-                    plt.close(fig)
-
-                    # Plot AUROC
-                    fig = plt.figure(figsize=(3, 3))
-                    plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
-                    for thresh in [35, 40, 45, 50]:
-                        fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
-                        print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
-                        plt.plot(fpr, tpr)
-
-                    plt.axis([-0.01, 1.01, -0.01, 1.01])
-                    plt.xlabel("False Positive Rate")
-                    plt.ylabel("True Positive Rate")
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
-                    plt.close(fig)
+                    self.plot_results(y, yhat, split)
 
 
-
-
-
-        for epoch in range(max_epochs):
-            self._run_epoch(epoch)
-            if self.gpu_id == 0 and epoch % self.save_every == 0:
-                self._save_checkpoint(epoch)
+        # for epoch in range(max_epochs):
+        #     self._run_epoch(epoch)
+        #     if self.gpu_id == 0 and epoch % self.save_every == 0:
+        #         self._save_checkpoint(epoch)
 
 def load_train_objs():
     train_set = MyTrainDataset(2048)  # load your dataset
+    #TODO
     model = torch.nn.Linear(20, 1)  # load your model
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
     return train_set, model, optimizer
 
-def prepare_dataloader(dataset: Dataset, batch_size: int):
+def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
+        pin_memory: bool = True, drop_last: bool = True):
     return DataLoader(
         dataset,
         batch_size=batch_size,
         pin_memory=True,
         shuffle=True,
+        num_workers=num_workers,
+        drop_last=drop_last,
+        pin_memory=pin_memory,
         sample=DistributedSampler(dataset) if is_distributed() else None,
     )
 
