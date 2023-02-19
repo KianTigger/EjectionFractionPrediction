@@ -97,6 +97,10 @@ class EFPredictDPP:
         self.save_every = save_every
         self.model = DDP(self.model, device_ids=[gpu_id])
         self.data_dir = data_dir
+        if output is None:
+            output = os.path.join("output", "video", "{}_{}_{}_{}".format(
+                model_name, frames, period, "pretrained" if pretrained else "random"))
+        os.makedirs(output, exist_ok=True)
         self.output = output
         self.task = task
         self.pretrained = pretrained
