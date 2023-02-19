@@ -314,6 +314,7 @@ class EFPredictDPP:
                         torch.cuda.reset_peak_memory_stats(i)
 
                     ds = dataset[phase]
+                    print("Self.device", self.device)
                     dataloader = prepare_dataloader(ds, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
