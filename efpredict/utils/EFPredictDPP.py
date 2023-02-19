@@ -113,7 +113,7 @@ class EFPredictDPP:
         self.device = device
         self.seed = seed
     
-    def _run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
+    def _run_epoch(self, model, dataloader, train, optim, device, save_all=False, block_size=None):
         """Run one epoch of training/evaluation for ejection fraction prediction.
 
         Args:
@@ -278,7 +278,7 @@ class EFPredictDPP:
         plt.savefig(os.path.join(self.output, "{}_roc.pdf".format(split)))
         plt.close(fig)
 
-    def train(self, max_epochs: int):
+    def train(self):
         optim, scheduler = self._optimizer_and_scheduler()
         kwargs = self._mean_and_std()
         dataset = self._dataset(kwargs)
@@ -390,13 +390,9 @@ class EFPredictDPP:
                     self.plot_results(y, yhat, split)
 
 
-        # for epoch in range(max_epochs):
-        #     self._run_epoch(epoch)
-        #     if self.gpu_id == 0 and epoch % self.save_every == 0:
-        #         self._save_checkpoint(epoch)
-
 def load_train_objs():
-    train_set = MyTrainDataset(2048)  # load your dataset
+    kwargs = EFPredictDPP._mean_and_std()
+    train_set = EFPredictDPP._dataset(kwargs)  # load your dataset
     #TODO
     model = torch.nn.Linear(20, 1)  # load your model
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
@@ -415,7 +411,6 @@ def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
     )
 
 def run():
-    print("Running distributed training job")
     world_size = torch.cuda.device_count()
     save_every = 1
     total_epochs = 5
@@ -423,12 +418,12 @@ def run():
     mp.spawn(main, args=(world_size, save_every, total_epochs, batch_size), nprocs=world_size)
 
 
-def main(rank: int, world_size: int, save_every: int, total_epochs: int, batch_size: int):
+def main(rank: int, world_size: int, save_every: int, batch_size: int):
     ddp_setup(rank, world_size)
     dataset, model, optimizer = load_train_objs()
     train_data = prepare_dataloader(dataset, batch_size)
     trainer = EFPredictDPP(model, train_data, optimizer, rank, save_every)
-    trainer.train(total_epochs)
+    trainer.train()
     destroy_process_group()
 
 
