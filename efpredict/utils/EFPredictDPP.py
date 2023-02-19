@@ -56,7 +56,7 @@ def ddp_setup(rank, world_size):
 class EFPredictDPP:
     def __init__(
         self,
-        model: torch.nn.Module,
+        # model: torch.nn.Module,
         # train_data: DataLoader,
         # optimizer: torch.optim.Optimizer,
         gpu_id: int,
