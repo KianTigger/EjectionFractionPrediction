@@ -64,7 +64,7 @@ def run(
 
     kwargs = mean_and_std(data_dir, task, frames, period)
 
-    dataset = dataset(data_dir, num_train_patients, kwargs)
+    dataset = get_dataset(data_dir, num_train_patients, kwargs)
 
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
@@ -282,7 +282,7 @@ def mean_and_std(data_dir, task, frames, period):
     
     return kwargs
 
-def dataset(data_dir, num_train_patients, kwargs):
+def get_dataset(data_dir, num_train_patients, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
     # TODO again replace efpredict with own file/functions.
