@@ -62,7 +62,7 @@ def run(
 
     output, device, model, optim, scheduler = setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period)
 
-    kwargs = mean_and_std(task, frames, period)
+    kwargs = mean_and_std(data_dir, task, frames, period)
 
     dataset = dataset(data_dir, num_train_patients, kwargs)
 
@@ -96,7 +96,7 @@ def run(
 
             scheduler.step()
 
-            bestLoss = save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
+            bestLoss = save_checkpoint(model, period, frames, epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
 
         # Load best weights
         if num_epochs != 0:
@@ -250,14 +250,14 @@ def get_checkpoint(model, optim, scheduler, output, f):
     
     return model, optim, scheduler, epoch_resume, bestLoss
 
-def save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
+def save_checkpoint(model, period, frames, epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
         #TODO change this to match original run.
         # Save checkpoint
         save = {
             'epoch': epoch,
-            'state_dict': self.model.module.state_dict(),
-            'period': self.period,
-            'frames': self.frames,
+            'state_dict': model.state_dict(),
+            'period': period,
+            'frames': frames,
             'best_loss': bestLoss,
             'loss': loss,
             'r2': sklearn.metrics.r2_score(y, yhat),
@@ -270,9 +270,9 @@ def save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
             bestLoss = loss
         return bestLoss
 
-def mean_and_std(task, frames, period):
+def mean_and_std(data_dir, task, frames, period):
     # Compute mean and std
-    mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=self.data_dir, split="train"))
+    mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=data_dir, split="train"))
     kwargs = {"target_type": task,
             "mean": mean,
             "std": std,
