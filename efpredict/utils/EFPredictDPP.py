@@ -35,23 +35,7 @@ import efpredict
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
 
-def is_distributed():
-    return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
-def ddp_setup(rank, world_size):
-    """
-    Args:
-        rank (int): Rank (identifier) of the current process.
-        world_size (int): Number of processes participating in the job.
-    """
-
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-
-    # initialize the process group
-    # TODO think nccl is needed but might be gloo instead.
-    # init_process_group(backend="gloo", rank=rank, world_size=world_size)
-    init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 class EFPredictDPP:
     def __init__(
@@ -397,6 +381,24 @@ class EFPredictDPP:
                     # Plot actual and predicted EF
                     self.plot_results(y, yhat, split)
 
+def is_distributed():
+    print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
+    return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
+
+def ddp_setup(rank, world_size):
+    """
+    Args:
+        rank (int): Rank (identifier) of the current process.
+        world_size (int): Number of processes participating in the job.
+    """
+
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # initialize the process group
+    # TODO think nccl is needed but might be gloo instead.
+    # init_process_group(backend="gloo", rank=rank, world_size=world_size)
+    init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 def load_train_objs():
     kwargs = EFPredictDPP._mean_and_std()
@@ -415,7 +417,7 @@ def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
         shuffle=shuffle,
         num_workers=num_workers,
         drop_last=drop_last,
-        sample=DistributedSampler(dataset) if is_distributed() else None,
+        sample=(DistributedSampler(dataset) if is_distributed() else None),
     )
 
 def run():
