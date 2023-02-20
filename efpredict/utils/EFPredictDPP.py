@@ -315,6 +315,7 @@ class EFPredictDPP:
 
                     ds = dataset[phase]
                     print("ds", ds)
+                    print("is_distibuted", is_distributed())
                     dataloader = prepare_dataloader(ds, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
