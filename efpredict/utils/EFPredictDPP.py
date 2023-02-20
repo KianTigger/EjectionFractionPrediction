@@ -43,7 +43,7 @@ class EFPredictDPP:
         # model: torch.nn.Module,
         # train_data: DataLoader,
         # optimizer: torch.optim.Optimizer,
-        gpu_id: int,
+        gpu_id: int = 0,
         save_every: int = 10,
         data_dir=None,
         output=None,
