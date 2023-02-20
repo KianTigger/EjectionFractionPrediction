@@ -133,17 +133,17 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
 
      # Set up model
      #TODO get rid of comments
-    # model = torchvision.models.video.__dict__[
-    #     model_name](pretrained=pretrained)
-    #     # model_name](weights="R2Plus1D_18_Weights.DEFAULT") #TODO Should this be changed?
+    model = torchvision.models.video.__dict__[
+        model_name](pretrained=pretrained)
+    # # model_name](weights="R2Plus1D_18_Weights.DEFAULT") #TODO Should this be changed?
     #Setup model so if pretrained is true, then use the pretrained weights, otherwise use random weights
-    if pretrained:
-        #TODO make it so if other models are used, it chooses the correct weights
-        model = torchvision.models.video.__dict__[
-            model_name](weights=R2Plus1D_18_Weights.DEFAULT)
-    else:
-        model = torchvision.models.video.__dict__[
-            model_name](weights=None)
+    # if pretrained:
+    #     #TODO make it so if other models are used, it chooses the correct weights
+    #     model = torchvision.models.video.__dict__[
+    #         model_name](weights=R2Plus1D_18_Weights.DEFAULT)
+    # else:
+    #     model = torchvision.models.video.__dict__[
+    #         model_name](weights=None)
 
     # Replaced the last layer with a linear layer with 1 output
     model.fc = torch.nn.Linear(model.fc.in_features, 1)
