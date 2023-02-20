@@ -29,6 +29,7 @@ import efpredict
 @click.option("--batch_size", type=int, default=20)
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
+
 def run(
     data_dir=None,
     output=None,
@@ -61,24 +62,9 @@ def run(
 
     output, device, model, optim, scheduler = setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period)
 
-    # Compute mean and std
-    mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=data_dir, split="train"))
-    kwargs = {"target_type": task,
-              "mean": mean,
-              "std": std,
-              "length": frames,
-              "period": period,
-              }
+    kwargs = mean_and_std(task, frames, period)
 
-    # Set up datasets and dataloaders
-    dataset = {}
-    # TODO again replace efpredict with own file/functions.
-    dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
-    if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
-        # Subsample patients (used for ablation experiment)
-        indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
-        dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
-    dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
+    dataset = dataset(data_dir, num_train_patients, kwargs)
 
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
@@ -283,6 +269,31 @@ def save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
             torch.save(save, os.path.join(output, "best.pt"))
             bestLoss = loss
         return bestLoss
+
+def mean_and_std(task, frames, period):
+    # Compute mean and std
+    mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=self.data_dir, split="train"))
+    kwargs = {"target_type": task,
+            "mean": mean,
+            "std": std,
+            "length": frames,
+            "period": period,
+            }
+    
+    return kwargs
+
+def dataset(data_dir, num_train_patients, kwargs):
+    # Set up datasets and dataloaders
+    dataset = {}
+    # TODO again replace efpredict with own file/functions.
+    dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
+    if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
+        # Subsample patients (used for ablation experiment)
+        indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
+        dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
+    dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
+
+    return dataset
 
 def plot_results(y, yhat, split, output):
         # Plot actual and predicted EF
