@@ -36,6 +36,7 @@ import efpredict
 @click.option("--seed", type=int, default=0)
 
 def is_distributed():
+    return False
     print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
     return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
