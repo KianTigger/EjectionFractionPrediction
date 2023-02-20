@@ -37,7 +37,7 @@ import efpredict
 
 
 
-def ddp_setup(rank, world_size):
+def ddp_setup(rank: int, world_size: int):
     """
     Args:
         rank (int): Rank (identifier) of the current process.
