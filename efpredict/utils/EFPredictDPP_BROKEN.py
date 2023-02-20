@@ -35,31 +35,15 @@ import efpredict
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
 
-def is_distributed():
-    return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
-def ddp_setup(rank, world_size):
-    """
-    Args:
-        rank (int): Rank (identifier) of the current process.
-        world_size (int): Number of processes participating in the job.
-    """
-
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-
-    # initialize the process group
-    # TODO think nccl is needed but might be gloo instead.
-    # init_process_group(backend="gloo", rank=rank, world_size=world_size)
-    init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 class EFPredictDPP:
     def __init__(
         self,
-        model: torch.nn.Module,
-        train_data: DataLoader,
-        optimizer: torch.optim.Optimizer,
-        gpu_id: int,
+        # model: torch.nn.Module,
+        # train_data: DataLoader,
+        # optimizer: torch.optim.Optimizer,
+        gpu_id: int = 0,
         save_every: int = 10,
         data_dir=None,
         output=None,
@@ -91,12 +75,16 @@ class EFPredictDPP:
         self.model_name = model_name
         self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
         self.gpu_id = gpu_id
-        self.model = model.to(gpu_id)
+        self.model = self.model.to(gpu_id)
         # self.train_data = train_data
         # self.optimizer = optimizer
         self.save_every = save_every
         self.model = DDP(self.model, device_ids=[gpu_id])
         self.data_dir = data_dir
+        if output is None:
+            output = os.path.join("output", "video", "{}_{}_{}_{}".format(
+                model_name, frames, period, "pretrained" if pretrained else "random"))
+        os.makedirs(output, exist_ok=True)
         self.output = output
         self.task = task
         self.pretrained = pretrained
@@ -209,15 +197,14 @@ class EFPredictDPP:
         torch.save(save, os.path.join(output, "checkpoint.pt"))
         if loss < bestLoss:
             torch.save(save, os.path.join(output, "best.pt"))
-            bestLoss = loss
     
     def _optimizer_and_scheduler(self):
         # Set up optimizer and scheduler
         optim = torch.optim.SGD(self.model.parameters(), lr=self.lr,
                                 momentum=0.9, weight_decay=self.weight_decay)
-        if lr_step_period is None:
-            lr_step_period = math.inf
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
+        if self.lr_step_period is None:
+            self.lr_step_period = math.inf
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, self.lr_step_period)
         
         return optim, scheduler
 
@@ -280,25 +267,29 @@ class EFPredictDPP:
         plt.close(fig)
 
     def train(self):
+        print("Starting training")
         optim, scheduler = self._optimizer_and_scheduler()
         kwargs = self._mean_and_std()
         dataset = self._dataset(kwargs)
         
         # Run training and testing loops
+        print("os.path.join(self.output, 'log.csv')", os.path.join(self.output, "log.csv"))
         with open(os.path.join(self.output, "log.csv"), "a") as f:
+            print("Starting run")
             epoch_resume = 0
             bestLoss = float("inf")
-            try:
-                # Attempt to load checkpoint
-                checkpoint = torch.load(os.path.join(self.output, "checkpoint.pt"))
-                self.model.module.load_state_dict(checkpoint['state_dict'])
-                optim.load_state_dict(checkpoint['opt_dict'])
-                scheduler.load_state_dict(checkpoint['scheduler_dict'])
-                epoch_resume = checkpoint["epoch"] + 1
-                bestLoss = checkpoint["best_loss"]
-                f.write("Resuming from epoch {}\n".format(epoch_resume))
-            except FileNotFoundError:
-                f.write("Starting run from scratch\n")
+            # try:
+            #     # Attempt to load checkpoint
+            #     checkpoint = torch.load(os.path.join(self.output, "checkpoint.pt"))
+            #     self.model.module.load_state_dict(checkpoint['state_dict'])
+            #     optim.load_state_dict(checkpoint['opt_dict'])
+            #     scheduler.load_state_dict(checkpoint['scheduler_dict'])
+            #     epoch_resume = checkpoint["epoch"] + 1
+            #     bestLoss = checkpoint["best_loss"]
+            #     f.write("Resuming from epoch {}\n".format(epoch_resume))
+            # except FileNotFoundError:
+            #     f.write("Starting run from scratch\n")
+            f.write("Starting run from scratch\n")
 
             for epoch in range(epoch_resume, self.num_epochs):
                 print("Epoch #{}".format(epoch), flush=True)
@@ -308,6 +299,7 @@ class EFPredictDPP:
                         torch.cuda.reset_peak_memory_stats(i)
 
                     ds = dataset[phase]
+                    print("Self.device", self.device)
                     dataloader = prepare_dataloader(ds, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
@@ -390,6 +382,25 @@ class EFPredictDPP:
                     # Plot actual and predicted EF
                     self.plot_results(y, yhat, split)
 
+def is_distributed():
+    print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
+    return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
+
+def ddp_setup(rank, world_size):
+    """
+    Args:
+        rank (int): Rank (identifier) of the current process.
+        world_size (int): Number of processes participating in the job.
+    """
+
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+
+    # initialize the process group
+    # TODO think nccl is needed but might be gloo instead.
+    # init_process_group(backend="gloo", rank=rank, world_size=world_size)
+    init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 def load_train_objs():
     kwargs = EFPredictDPP._mean_and_std()
@@ -408,7 +419,7 @@ def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
         shuffle=shuffle,
         num_workers=num_workers,
         drop_last=drop_last,
-        sample=DistributedSampler(dataset) if is_distributed() else None,
+        sample=(DistributedSampler(dataset) if is_distributed() else None),
     )
 
 def run():
@@ -416,15 +427,20 @@ def run():
     save_every = 1
     total_epochs = 5
     batch_size = 20
+    #Rank is passed automatically by torch.distributed.spawn
     mp.spawn(main, args=(world_size, save_every, batch_size), nprocs=world_size)
-
+    
 
 def main(rank: int, world_size: int, save_every: int, batch_size: int):
-    ddp_setup(rank, world_size)
+    ddp_setup(rank=rank, world_size=world_size)
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
-    # trainer = EFPredictDPP(model, train_data, optimizer, save_every)
-    trainer = EFPredictDPP(gpu_id=rank,)
+
+    print("Rank: ", rank)
+    print("Device: ", torch.cuda.current_device())
+    
+    # trainer = EFPredictDPP(gpu_id=rank, device=torch.device('cuda', rank))
+    trainer = EFPredictDPP()
     trainer.train()
     destroy_process_group()
 
