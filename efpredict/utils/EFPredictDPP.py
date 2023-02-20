@@ -425,7 +425,8 @@ def run():
     save_every = 1
     total_epochs = 5
     batch_size = 20
-    mp.spawn(main, args=(world_size, save_every, batch_size), nprocs=world_size)
+    rank = torch.distributed.get_rank()
+    mp.spawn(main, args=(rank, world_size, save_every, batch_size), nprocs=world_size)
 
 
 def main(rank: int, world_size: int, save_every: int, batch_size: int):
