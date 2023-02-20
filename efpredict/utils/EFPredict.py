@@ -59,10 +59,74 @@ def run(
 ):
     # TODO Write docstrings, and explanations for args
 
+    output, device, model, optim, scheduler = setup_model(seed, output, device, model_name, weights, lr, weight_decay, lr_step_period)
+
+    # Compute mean and std
+    mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=data_dir, split="train"))
+    kwargs = {"target_type": task,
+              "mean": mean,
+              "std": std,
+              "length": frames,
+              "period": period,
+              }
+
+    # Set up datasets and dataloaders
+    dataset = {}
+    # TODO again replace efpredict with own file/functions.
+    dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
+    if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
+        # Subsample patients (used for ablation experiment)
+        indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
+        dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
+    dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
+
+    # Run training and testing loops
+    with open(os.path.join(output, "log.csv"), "a") as f:
+
+        model, optim, scheduler, epoch_resume, bestLoss = get_checkpoint(model, optim, scheduler, output, f)
+
+        for epoch in range(epoch_resume, num_epochs):
+            print("Epoch #{}".format(epoch), flush=True)
+            for phase in ['train', 'val']:
+                start_time = time.time()
+                for i in range(torch.cuda.device_count()):
+                    torch.cuda.reset_peak_memory_stats(i)
+
+                ds = dataset[phase]
+                dataloader = torch.utils.data.DataLoader(
+                    ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device)
+                f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
+                                                              phase,
+                                                              loss,
+                                                              sklearn.metrics.r2_score(y, yhat),
+                                                              time.time() - start_time,
+                                                              y.size,
+                                                              sum(torch.cuda.max_memory_allocated() for i in range(torch.cuda.device_count())),
+                                                              sum(torch.cuda.max_memory_reserved() for i in range(torch.cuda.device_count())),
+                                                              batch_size))
+                f.flush()
+
+            scheduler.step()
+
+            bestLoss = save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
+
+        # Load best weights
+        if num_epochs != 0:
+            checkpoint = torch.load(os.path.join(output, "best.pt"))
+            model.load_state_dict(checkpoint['state_dict'])
+            f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
+            f.flush()
+
+        if run_test:
+            test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
+
+def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period):
     # Seed RNGs
     np.random.seed(seed)
     torch.manual_seed(seed)
-
+    
     # Set default output directory
     if output is None:
         output = os.path.join("output", "video", "{}_{}_{}_{}".format(
@@ -103,123 +167,7 @@ def run(
         lr_step_period = math.inf
     scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
 
-    # Compute mean and std
-    mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=data_dir, split="train"))
-    kwargs = {"target_type": task,
-              "mean": mean,
-              "std": std,
-              "length": frames,
-              "period": period,
-              }
-
-    # Set up datasets and dataloaders
-    dataset = {}
-    # TODO again replace efpredict with own file/functions.
-    dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
-    if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
-        # Subsample patients (used for ablation experiment)
-        indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
-        dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
-    dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
-
-    # Run training and testing loops
-    with open(os.path.join(output, "log.csv"), "a") as f:
-        model, optim, scheduler, epoch_resume, bestLoss = get_checkpoint(model, optim, scheduler, output, f)
-        
-        for epoch in range(epoch_resume, num_epochs):
-            print("Epoch #{}".format(epoch), flush=True)
-            for phase in ['train', 'val']:
-                start_time = time.time()
-                for i in range(torch.cuda.device_count()):
-                    torch.cuda.reset_peak_memory_stats(i)
-
-                ds = dataset[phase]
-                dataloader = torch.utils.data.DataLoader(
-                    ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
-
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device)
-                f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
-                                                              phase,
-                                                              loss,
-                                                              sklearn.metrics.r2_score(y, yhat),
-                                                              time.time() - start_time,
-                                                              y.size,
-                                                              sum(torch.cuda.max_memory_allocated() for i in range(torch.cuda.device_count())),
-                                                              sum(torch.cuda.max_memory_reserved() for i in range(torch.cuda.device_count())),
-                                                              batch_size))
-                f.flush()
-            scheduler.step()
-
-            bestLoss = save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
-
-        # Load best weights
-        if num_epochs != 0:
-            checkpoint = torch.load(os.path.join(output, "best.pt"))
-            model.load_state_dict(checkpoint['state_dict'])
-            f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
-            f.flush()
-
-        if run_test:
-            for split in ["val", "test"]:
-                # Performance without test-time augmentation
-                dataloader = torch.utils.data.DataLoader(
-                    efpredict.datasets.Echo(root=data_dir, split=split, **kwargs),
-                    batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device)
-                f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
-                f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
-                f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
-                f.flush()
-
-                # Performance with test-time augmentation
-                ds = efpredict.datasets.Echo(root=data_dir, split=split, **kwargs, clips="all")
-                dataloader = torch.utils.data.DataLoader(
-                    ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
-                f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
-                f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
-                f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
-                f.flush()
-
-                # Write full performance to file
-                with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
-                    for (filename, pred) in zip(ds.fnames, yhat):
-                        for (i, p) in enumerate(pred):
-                            g.write("{},{},{:.4f}\n".format(filename, i, p))
-                efpredict.utils.latexify()
-                yhat = np.array(list(map(lambda x: x.mean(), yhat)))
-
-                # Plot actual and predicted EF
-                fig = plt.figure(figsize=(3, 3))
-                lower = min(y.min(), yhat.min())
-                upper = max(y.max(), yhat.max())
-                plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
-                plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
-                plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
-                plt.gca().set_aspect("equal", "box")
-                plt.xlabel("Actual EF (%)")
-                plt.ylabel("Predicted EF (%)")
-                plt.xticks([10, 20, 30, 40, 50, 60, 70, 80])
-                plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
-                plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
-                plt.tight_layout()
-                plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
-                plt.close(fig)
-
-                # Plot AUROC
-                fig = plt.figure(figsize=(3, 3))
-                plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
-                for thresh in [35, 40, 45, 50]:
-                    fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
-                    print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
-                    plt.plot(fpr, tpr)
-
-                plt.axis([-0.01, 1.01, -0.01, 1.01])
-                plt.xlabel("False Positive Rate")
-                plt.ylabel("True Positive Rate")
-                plt.tight_layout()
-                plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
-                plt.close(fig)
+    return output, device, model, optim, scheduler
 
 def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
@@ -316,7 +264,7 @@ def get_checkpoint(model, optim, scheduler, output, f):
     
     return model, optim, scheduler, epoch_resume, bestLoss
 
-def save_checkpoint(self, epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
+def save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
         #TODO change this to match original run.
         # Save checkpoint
         save = {
@@ -335,4 +283,68 @@ def save_checkpoint(self, epoch, output, loss, bestLoss, y, yhat, optim, schedul
             torch.save(save, os.path.join(output, "best.pt"))
             bestLoss = loss
         return bestLoss
-    
+
+def plot_results(y, yhat, split, output):
+        # Plot actual and predicted EF
+        fig = plt.figure(figsize=(3, 3))
+        lower = min(y.min(), yhat.min())
+        upper = max(y.max(), yhat.max())
+        plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
+        plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
+        plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
+        plt.gca().set_aspect("equal", "box")
+        plt.xlabel("Actual EF (%)")
+        plt.ylabel("Predicted EF (%)")
+        plt.xticks([10, 20, 30, 40, 50, 60, 70, 80])
+        plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
+        plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
+        plt.tight_layout()
+        plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
+        plt.close(fig)
+
+        # Plot AUROC
+        fig = plt.figure(figsize=(3, 3))
+        plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
+        for thresh in [35, 40, 45, 50]:
+            fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
+            print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
+            plt.plot(fpr, tpr)
+
+        plt.axis([-0.01, 1.01, -0.01, 1.01])
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.tight_layout()
+        plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
+        plt.close(fig)
+
+def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs):
+    for split in ["val", "test"]:
+        # Performance without test-time augmentation
+        dataloader = torch.utils.data.DataLoader(
+            efpredict.datasets.Echo(root=data_dir, split=split, **kwargs),
+            batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
+        loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device)
+        f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
+        f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
+        f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
+        f.flush()
+
+        # Performance with test-time augmentation
+        ds = efpredict.datasets.Echo(root=data_dir, split=split, **kwargs, clips="all")
+        dataloader = torch.utils.data.DataLoader(
+            ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
+        loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
+        f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
+        f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
+        f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
+        f.flush()
+
+        # Write full performance to file
+        with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
+            for (filename, pred) in zip(ds.fnames, yhat):
+                for (i, p) in enumerate(pred):
+                    g.write("{},{},{:.4f}\n".format(filename, i, p))
+        efpredict.utils.latexify()
+        yhat = np.array(list(map(lambda x: x.mean(), yhat)))
+
+        plot_results(y, yhat, split, output)
