@@ -35,10 +35,7 @@ import efpredict
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
 
-def is_distributed():
-    return False
-    print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
-    return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
+
 
 def ddp_setup(rank, world_size):
     """
@@ -119,6 +116,25 @@ class EFPredictDPP:
         self.batch_size = batch_size
         self.device = device
         self.seed = seed
+
+    def prepare_dataloader(self, dataset: Dataset, batch_size: int, num_workers: int = 0,
+        pin_memory: bool = True, shuffle: bool = True, drop_last: bool = True):
+        # print("is_distributed(): ", is_distributed())
+        print("in prepare_dataloader")
+        return DataLoader(
+            dataset,
+            batch_size=batch_size,
+            pin_memory=pin_memory,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            drop_last=drop_last,
+            sample=DistributedSampler(dataset) if self.is_distributed() else None,
+        )
+
+    def is_distributed(self,):
+        # return False
+        print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
+        return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
     def _run_epoch(self, model, dataloader, train, optim, device, save_all=False, block_size=None):
         """Run one epoch of training/evaluation for ejection fraction prediction.
@@ -316,8 +332,8 @@ class EFPredictDPP:
 
                     ds = dataset[phase]
                     print("ds", ds)
-                    print("is_distibuted", is_distributed())
-                    dataloader = prepare_dataloader(ds, self.batch_size, 
+                    print("is_distibuted", self.is_distributed())
+                    dataloader = self.prepare_dataloader(ds, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
                     # dataloader = torch.utils.data.DataLoader(
@@ -358,7 +374,7 @@ class EFPredictDPP:
                     
                     dataset = efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs)
                     #TODO swap this out for my ds loader.
-                    dataloader = prepare_dataloader(dataset, self.batch_size, 
+                    dataloader = self.prepare_dataloader(dataset, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=False) 
                     
@@ -375,7 +391,7 @@ class EFPredictDPP:
                     ds = efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs, clips="all")
                     #TODO swap this out for my ds loader.
                     
-                    dataloader = prepare_dataloader(ds, 1, 
+                    dataloader = self.prepare_dataloader(ds, 1, 
                     num_workers=self.num_workers, shuffle=False, 
                     pin_memory=(self.device.type == "cuda")) 
                     # dataloader = torch.utils.data.DataLoader(
@@ -408,19 +424,7 @@ def load_train_objs():
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
     return train_set, model, optimizer
 
-def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
-        pin_memory: bool = True, shuffle: bool = True, drop_last: bool = True):
-    # print("is_distributed(): ", is_distributed())
-    print("in prepare_dataloader")
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
-        pin_memory=pin_memory,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        drop_last=drop_last,
-        sample=DistributedSampler(dataset) if is_distributed() else None,
-    )
+
 
 def run():
     world_size = torch.cuda.device_count()
