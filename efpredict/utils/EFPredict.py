@@ -358,8 +358,8 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
         # Write full performance to file
         with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
             for (filename, pred) in zip(ds.fnames, yhat):
-                print("Writing", filename)
-                print("  ", pred)
+                if isinstance(pred, (int, float)):  # check if pred is a single value
+                    pred = [pred]  # wrap it in a list to handle it properly
                 for (i, p) in enumerate(pred):
                     g.write("{},{},{:.4f}\n".format(filename, i, p))
         efpredict.utils.latexify()
