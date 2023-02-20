@@ -373,5 +373,9 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
 
         #Print the MAE
         print("MAE: {:.2f}".format(sklearn.metrics.mean_absolute_error(y, yhat)))
+        #Print the RMSE
+        print("RMSE: {:.2f}".format(math.sqrt(sklearn.metrics.mean_squared_error(y, yhat))))
+        #Print the R2
+        print("R2: {:.2f}".format(sklearn.metrics.r2_score(y, yhat)))
 
         # plot_results(y, yhat, split, output)
