@@ -344,15 +344,15 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
         f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
         f.flush()
 
-        # Performance with test-time augmentation
-        ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs, clips="all")
-        dataloader = torch.utils.data.DataLoader(
-            ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
-        loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
-        f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
-        f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
-        f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
-        f.flush()
+        # # Performance with test-time augmentation
+        # ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs, clips="all")
+        # dataloader = torch.utils.data.DataLoader(
+        #     ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
+        # loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
+        # f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
+        # f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
+        # f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
+        # f.flush()
 
         # Write full performance to file
         with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
