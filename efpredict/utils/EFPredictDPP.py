@@ -56,9 +56,9 @@ def ddp_setup(rank, world_size):
 class EFPredictDPP:
     def __init__(
         self,
-        model: torch.nn.Module,
-        train_data: DataLoader,
-        optimizer: torch.optim.Optimizer,
+        # model: torch.nn.Module,
+        # train_data: DataLoader,
+        # optimizer: torch.optim.Optimizer,
         gpu_id: int,
         save_every: int = 10,
         data_dir=None,
@@ -91,12 +91,16 @@ class EFPredictDPP:
         self.model_name = model_name
         self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
         self.gpu_id = gpu_id
-        self.model = model.to(gpu_id)
+        self.model = self.model.to(gpu_id)
         # self.train_data = train_data
         # self.optimizer = optimizer
         self.save_every = save_every
         self.model = DDP(self.model, device_ids=[gpu_id])
         self.data_dir = data_dir
+        if output is None:
+            output = os.path.join("output", "video", "{}_{}_{}_{}".format(
+                model_name, frames, period, "pretrained" if pretrained else "random"))
+        os.makedirs(output, exist_ok=True)
         self.output = output
         self.task = task
         self.pretrained = pretrained
@@ -209,15 +213,14 @@ class EFPredictDPP:
         torch.save(save, os.path.join(output, "checkpoint.pt"))
         if loss < bestLoss:
             torch.save(save, os.path.join(output, "best.pt"))
-            bestLoss = loss
     
     def _optimizer_and_scheduler(self):
         # Set up optimizer and scheduler
         optim = torch.optim.SGD(self.model.parameters(), lr=self.lr,
                                 momentum=0.9, weight_decay=self.weight_decay)
-        if lr_step_period is None:
-            lr_step_period = math.inf
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
+        if self.lr_step_period is None:
+            self.lr_step_period = math.inf
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, self.lr_step_period)
         
         return optim, scheduler
 
@@ -285,7 +288,9 @@ class EFPredictDPP:
         dataset = self._dataset(kwargs)
         
         # Run training and testing loops
+        print("os.path.join(self.output, 'log.csv')", os.path.join(self.output, "log.csv"))
         with open(os.path.join(self.output, "log.csv"), "a") as f:
+            print("Starting run")
             epoch_resume = 0
             bestLoss = float("inf")
             try:
