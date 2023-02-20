@@ -35,9 +35,10 @@ import efpredict
 @click.option("--device", type=str, default=None)
 @click.option("--seed", type=int, default=0)
 
+def is_distributed():
+    return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
-
-def ddp_setup(rank: int, world_size: int):
+def ddp_setup(rank, world_size):
     """
     Args:
         rank (int): Rank (identifier) of the current process.
@@ -55,9 +56,9 @@ def ddp_setup(rank: int, world_size: int):
 class EFPredictDPP:
     def __init__(
         self,
-        # model: torch.nn.Module,
-        # train_data: DataLoader,
-        # optimizer: torch.optim.Optimizer,
+        model: torch.nn.Module,
+        train_data: DataLoader,
+        optimizer: torch.optim.Optimizer,
         gpu_id: int,
         save_every: int = 10,
         data_dir=None,
@@ -87,21 +88,16 @@ class EFPredictDPP:
         device=None,
         seed=0,
     ) -> None:
-        self.model_name = model_name
-        self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
         self.gpu_id = gpu_id
-        self.model = self.model.to(gpu_id)
-        # self.train_data = train_data
-        # self.optimizer = optimizer
+        self.model = model.to(gpu_id)
+        self.train_data = train_data
+        self.optimizer = optimizer
         self.save_every = save_every
         self.model = DDP(self.model, device_ids=[gpu_id])
         self.data_dir = data_dir
-        if output is None:
-            output = os.path.join("output", "video", "{}_{}_{}_{}".format(
-                model_name, frames, period, "pretrained" if pretrained else "random"))
-        os.makedirs(output, exist_ok=True)
         self.output = output
         self.task = task
+        self.model_name = model_name
         self.pretrained = pretrained
         self.weights = weights
         self.run_test = run_test
@@ -116,25 +112,6 @@ class EFPredictDPP:
         self.batch_size = batch_size
         self.device = device
         self.seed = seed
-
-    def prepare_dataloader(self, dataset: Dataset, batch_size: int, num_workers: int = 0,
-        pin_memory: bool = True, shuffle: bool = True, drop_last: bool = True):
-        # print("is_distributed(): ", is_distributed())
-        print("in prepare_dataloader")
-        return DataLoader(
-            dataset,
-            batch_size=batch_size,
-            pin_memory=pin_memory,
-            shuffle=shuffle,
-            num_workers=num_workers,
-            drop_last=drop_last,
-            sample=DistributedSampler(dataset) if self.is_distributed() else None,
-        )
-
-    def is_distributed(self,):
-        # return False
-        print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
-        return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
     def _run_epoch(self, model, dataloader, train, optim, device, save_all=False, block_size=None):
         """Run one epoch of training/evaluation for ejection fraction prediction.
@@ -231,14 +208,15 @@ class EFPredictDPP:
         torch.save(save, os.path.join(output, "checkpoint.pt"))
         if loss < bestLoss:
             torch.save(save, os.path.join(output, "best.pt"))
+            bestLoss = loss
     
     def _optimizer_and_scheduler(self):
         # Set up optimizer and scheduler
         optim = torch.optim.SGD(self.model.parameters(), lr=self.lr,
                                 momentum=0.9, weight_decay=self.weight_decay)
-        if self.lr_step_period is None:
-            self.lr_step_period = math.inf
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, self.lr_step_period)
+        if lr_step_period is None:
+            lr_step_period = math.inf
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
         
         return optim, scheduler
 
@@ -306,22 +284,20 @@ class EFPredictDPP:
         dataset = self._dataset(kwargs)
         
         # Run training and testing loops
-        print("os.path.join(self.output, 'log.csv')", os.path.join(self.output, "log.csv"))
         with open(os.path.join(self.output, "log.csv"), "a") as f:
-            print("Starting run")
             epoch_resume = 0
             bestLoss = float("inf")
-            # try:
-            #     # Attempt to load checkpoint
-            #     checkpoint = torch.load(os.path.join(self.output, "checkpoint.pt"))
-            #     self.model.module.load_state_dict(checkpoint['state_dict'])
-            #     optim.load_state_dict(checkpoint['opt_dict'])
-            #     scheduler.load_state_dict(checkpoint['scheduler_dict'])
-            #     epoch_resume = checkpoint["epoch"] + 1
-            #     bestLoss = checkpoint["best_loss"]
-            #     f.write("Resuming from epoch {}\n".format(epoch_resume))
-            # except FileNotFoundError:
-            #     f.write("Starting run from scratch\n")
+            try:
+                # Attempt to load checkpoint
+                checkpoint = torch.load(os.path.join(self.output, "checkpoint.pt"))
+                self.model.module.load_state_dict(checkpoint['state_dict'])
+                optim.load_state_dict(checkpoint['opt_dict'])
+                scheduler.load_state_dict(checkpoint['scheduler_dict'])
+                epoch_resume = checkpoint["epoch"] + 1
+                bestLoss = checkpoint["best_loss"]
+                f.write("Resuming from epoch {}\n".format(epoch_resume))
+            except FileNotFoundError:
+                f.write("Starting run from scratch\n")
 
             for epoch in range(epoch_resume, self.num_epochs):
                 print("Epoch #{}".format(epoch), flush=True)
@@ -331,9 +307,7 @@ class EFPredictDPP:
                         torch.cuda.reset_peak_memory_stats(i)
 
                     ds = dataset[phase]
-                    print("ds", ds)
-                    print("is_distibuted", self.is_distributed())
-                    dataloader = self.prepare_dataloader(ds, self.batch_size, 
+                    dataloader = prepare_dataloader(ds, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
                     # dataloader = torch.utils.data.DataLoader(
@@ -368,13 +342,13 @@ class EFPredictDPP:
                 for split in ["val", "test"]:
                     # # Performance without test-time augmentation
                     # dataloader = torch.utils.data.DataLoader(
-                    #     efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs),
+                    #     efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs),
                     #     batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, 
                     #     pin_memory=(self.device.type == "cuda"), sampler=DistributedSampler(dataset["train"]) if distributed else None, drop_last=False)
                     
-                    dataset = efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs)
+                    dataset = efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs)
                     #TODO swap this out for my ds loader.
-                    dataloader = self.prepare_dataloader(dataset, self.batch_size, 
+                    dataloader = prepare_dataloader(dataset, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=False) 
                     
@@ -388,10 +362,10 @@ class EFPredictDPP:
                     f.flush()
 
                     # Performance with test-time augmentation
-                    ds = efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs, clips="all")
+                    ds = efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs, clips="all")
                     #TODO swap this out for my ds loader.
                     
-                    dataloader = self.prepare_dataloader(ds, 1, 
+                    dataloader = prepare_dataloader(ds, 1, 
                     num_workers=self.num_workers, shuffle=False, 
                     pin_memory=(self.device.type == "cuda")) 
                     # dataloader = torch.utils.data.DataLoader(
@@ -424,7 +398,17 @@ def load_train_objs():
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
     return train_set, model, optimizer
 
-
+def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
+        pin_memory: bool = True, shuffle: bool = True, drop_last: bool = True):
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        pin_memory=pin_memory,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        drop_last=drop_last,
+        sample=DistributedSampler(dataset) if is_distributed() else None,
+    )
 
 def run():
     world_size = torch.cuda.device_count()
@@ -435,13 +419,11 @@ def run():
 
 
 def main(rank: int, world_size: int, save_every: int, batch_size: int):
-    print("Running main on rank {}".format(rank))
-    print("World size: {}".format(world_size))
     ddp_setup(rank, world_size)
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
     # trainer = EFPredictDPP(model, train_data, optimizer, save_every)
-    trainer = EFPredictDPP(gpu_id=rank, device=torch.device('cuda', rank))
+    trainer = EFPredictDPP()
     trainer.train()
     destroy_process_group()
 
