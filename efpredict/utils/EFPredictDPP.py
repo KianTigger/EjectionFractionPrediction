@@ -430,7 +430,7 @@ def run():
     mp.spawn(main, args=(save_every, batch_size), nprocs=world_size)
 
 
-def main(save_every: int, batch_size: int):
+def main(world_size: int, save_every: int, batch_size: int):
     ddp_setup()
     # world_size = torch.cuda.device_count()
     rank = torch.distributed.get_rank()
