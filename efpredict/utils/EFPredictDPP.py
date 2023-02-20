@@ -314,6 +314,7 @@ class EFPredictDPP:
                         torch.cuda.reset_peak_memory_stats(i)
 
                     ds = dataset[phase]
+                    print("ds", ds)
                     dataloader = prepare_dataloader(ds, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
                         pin_memory=(self.device.type == "cuda"), drop_last=(phase == "train")) 
@@ -408,6 +409,7 @@ def load_train_objs():
 def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
         pin_memory: bool = True, shuffle: bool = True, drop_last: bool = True):
     # print("is_distributed(): ", is_distributed())
+    print("in prepare_dataloader")
     return DataLoader(
         dataset,
         batch_size=batch_size,
