@@ -226,7 +226,7 @@ class EFPredictDPP:
 
     def _mean_and_std(self):
         # Compute mean and std
-        mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamicDynamic(root=self.data_dir, split="train"))
+        mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=self.data_dir, split="train"))
         kwargs = {"target_type": self.task,
                 "mean": mean,
                 "std": std,
@@ -240,12 +240,12 @@ class EFPredictDPP:
         # Set up datasets and dataloaders
         dataset = {}
         # TODO again replace efpredict with own file/functions.
-        dataset["train"] = efpredict.datasets.EchoDynamicDynamic(root=self.data_dir, split="train", **kwargs, pad=12)
+        dataset["train"] = efpredict.datasets.EchoDynamic(root=self.data_dir, split="train", **kwargs, pad=12)
         if self.num_train_patients is not None and len(dataset["train"]) > self.num_train_patients:
             # Subsample patients (used for ablation experiment)
             indices = np.random.choice(len(dataset["train"]), self.num_train_patients, replace=False)
             dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
-        dataset["val"] = efpredict.datasets.EchoDynamicDynamic(root=self.data_dir, split="val", **kwargs)
+        dataset["val"] = efpredict.datasets.EchoDynamic(root=self.data_dir, split="val", **kwargs)
 
         return dataset
 
