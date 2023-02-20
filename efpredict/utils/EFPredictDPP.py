@@ -385,7 +385,7 @@ def is_distributed():
     print("'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1: ", 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1)
     return 'WORLD_SIZE' in os.environ and int(os.environ['WORLD_SIZE']) > 1
 
-def ddp_setup(rank, world_size):
+def ddp_setup():
     """
     Args:
         rank (int): Rank (identifier) of the current process.
@@ -395,10 +395,12 @@ def ddp_setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
 
+    init_process_group(backend="nccl")
+
     # initialize the process group
     # TODO think nccl is needed but might be gloo instead.
     # init_process_group(backend="gloo", rank=rank, world_size=world_size)
-    init_process_group(backend="nccl", rank=rank, world_size=world_size)
+    # init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 def load_train_objs():
     kwargs = EFPredictDPP._mean_and_std()
@@ -425,12 +427,13 @@ def run():
     save_every = 1
     total_epochs = 5
     batch_size = 20
+    mp.spawn(main, args=(save_every, batch_size), nprocs=world_size)
+
+
+def main(save_every: int, batch_size: int):
+    ddp_setup()
+    # world_size = torch.cuda.device_count()
     rank = torch.distributed.get_rank()
-    mp.spawn(main, args=(rank, world_size, save_every, batch_size), nprocs=world_size)
-
-
-def main(rank: int, world_size: int, save_every: int, batch_size: int):
-    ddp_setup(rank, world_size)
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
     # trainer = EFPredictDPP(model, train_data, optimizer, save_every)
