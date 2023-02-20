@@ -59,7 +59,7 @@ def run(
 ):
     # TODO Write docstrings, and explanations for args
 
-    output, device, model, optim, scheduler = setup_model(seed, output, device, model_name, weights, lr, weight_decay, lr_step_period)
+    output, device, model, optim, scheduler = setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period)
 
     # Compute mean and std
     mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=data_dir, split="train"))
