@@ -226,7 +226,7 @@ class EFPredictDPP:
 
     def _mean_and_std(self):
         # Compute mean and std
-        mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=self.data_dir, split="train"))
+        mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamicDynamic(root=self.data_dir, split="train"))
         kwargs = {"target_type": self.task,
                 "mean": mean,
                 "std": std,
@@ -240,12 +240,12 @@ class EFPredictDPP:
         # Set up datasets and dataloaders
         dataset = {}
         # TODO again replace efpredict with own file/functions.
-        dataset["train"] = efpredict.datasets.EchoDynamic(root=self.data_dir, split="train", **kwargs, pad=12)
+        dataset["train"] = efpredict.datasets.EchoDynamicDynamic(root=self.data_dir, split="train", **kwargs, pad=12)
         if self.num_train_patients is not None and len(dataset["train"]) > self.num_train_patients:
             # Subsample patients (used for ablation experiment)
             indices = np.random.choice(len(dataset["train"]), self.num_train_patients, replace=False)
             dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
-        dataset["val"] = efpredict.datasets.EchoDynamic(root=self.data_dir, split="val", **kwargs)
+        dataset["val"] = efpredict.datasets.EchoDynamicDynamic(root=self.data_dir, split="val", **kwargs)
 
         return dataset
 
@@ -348,11 +348,11 @@ class EFPredictDPP:
                 for split in ["val", "test"]:
                     # # Performance without test-time augmentation
                     # dataloader = torch.utils.data.DataLoader(
-                    #     efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs),
+                    #     efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs),
                     #     batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, 
                     #     pin_memory=(self.device.type == "cuda"), sampler=DistributedSampler(dataset["train"]) if distributed else None, drop_last=False)
                     
-                    dataset = efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs)
+                    dataset = efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs)
                     #TODO swap this out for my ds loader.
                     dataloader = prepare_dataloader(dataset, self.batch_size, 
                         num_workers=self.num_workers, shuffle=True, 
@@ -368,7 +368,7 @@ class EFPredictDPP:
                     f.flush()
 
                     # Performance with test-time augmentation
-                    ds = efpredict.datasets.Echo(root=self.data_dir, split=split, **kwargs, clips="all")
+                    ds = efpredict.datasets.EchoDynamic(root=self.data_dir, split=split, **kwargs, clips="all")
                     #TODO swap this out for my ds loader.
                     
                     dataloader = prepare_dataloader(ds, 1, 
