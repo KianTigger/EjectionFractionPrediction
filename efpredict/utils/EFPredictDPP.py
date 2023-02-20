@@ -435,6 +435,8 @@ def run():
 
 
 def main(rank: int, world_size: int, save_every: int, batch_size: int):
+    print("Running main on rank {}".format(rank))
+    print("World size: {}".format(world_size))
     ddp_setup(rank, world_size)
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
