@@ -43,6 +43,7 @@ class EFPredictDPP:
         # model: torch.nn.Module,
         # train_data: DataLoader,
         # optimizer: torch.optim.Optimizer,
+        gpu_id: int,
         save_every: int = 10,
         data_dir=None,
         output=None,
@@ -73,11 +74,12 @@ class EFPredictDPP:
     ) -> None:
         self.model_name = model_name
         self.model = torchvision.models.video.__dict__[self.model_name](pretrained=pretrained)
-        self.model = self.model.to(device)
+        self.gpu_id = gpu_id
+        self.model = self.model.to(gpu_id)
         # self.train_data = train_data
         # self.optimizer = optimizer
         self.save_every = save_every
-        self.model = DDP(self.model, device_ids=list(range(torch.cuda.device_count())))
+        self.model = DDP(self.model, device_ids=[gpu_id])
         self.data_dir = data_dir
         if output is None:
             output = os.path.join("output", "video", "{}_{}_{}_{}".format(
@@ -432,8 +434,11 @@ def main(rank: int, world_size: int, save_every: int, batch_size: int):
     ddp_setup(rank=rank, world_size=world_size)
     # dataset, model, optimizer = load_train_objs()
     # train_data = prepare_dataloader(dataset, batch_size)
+
+    print("Rank: ", rank)
+    print("Device: ", torch.cuda.current_device())
     
-    trainer = EFPredictDPP(device=torch.device('cuda', rank))
+    trainer = EFPredictDPP(gpu_id=rank, device=torch.device('cuda', rank))
     trainer.train()
     destroy_process_group()
 
