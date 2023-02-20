@@ -335,8 +335,9 @@ def plot_results(y, yhat, split, output):
 def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs):
     for split in ["val", "test"]:
         # Performance without test-time augmentation
+        ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs)
         dataloader = torch.utils.data.DataLoader(
-            efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs),
+            ds,
             batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
         loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device)
         f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
