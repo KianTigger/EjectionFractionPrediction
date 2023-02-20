@@ -124,20 +124,8 @@ def run(
 
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
-        epoch_resume = 0
-        bestLoss = float("inf")
-        try:
-            # Attempt to load checkpoint
-            checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
-            model.load_state_dict(checkpoint['state_dict'])
-            optim.load_state_dict(checkpoint['opt_dict'])
-            scheduler.load_state_dict(checkpoint['scheduler_dict'])
-            epoch_resume = checkpoint["epoch"] + 1
-            bestLoss = checkpoint["best_loss"]
-            f.write("Resuming from epoch {}\n".format(epoch_resume))
-        except FileNotFoundError:
-            f.write("Starting run from scratch\n")
-
+        model, optim, scheduler, epoch_resume, bestLoss = get_checkpoint(model, optim, scheduler, output, f)
+        
         for epoch in range(epoch_resume, num_epochs):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
@@ -162,22 +150,7 @@ def run(
                 f.flush()
             scheduler.step()
 
-            # Save checkpoint
-            save = {
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'period': period,
-                'frames': frames,
-                'best_loss': bestLoss,
-                'loss': loss,
-                'r2': sklearn.metrics.r2_score(y, yhat),
-                'opt_dict': optim.state_dict(),
-                'scheduler_dict': scheduler.state_dict(),
-            }
-            torch.save(save, os.path.join(output, "checkpoint.pt"))
-            if loss < bestLoss:
-                torch.save(save, os.path.join(output, "best.pt"))
-                bestLoss = loss
+            bestLoss = save_checkpoint(epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
 
         # Load best weights
         if num_epochs != 0:
@@ -326,4 +299,40 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
     return total / n, yhat, y
 
+def get_checkpoint(model, optim, scheduler, output, f):
+    epoch_resume = 0
+    bestLoss = float("inf")
+    try:
+        # Attempt to load checkpoint
+        checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
+        model.load_state_dict(checkpoint['state_dict'])
+        optim.load_state_dict(checkpoint['opt_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_dict'])
+        epoch_resume = checkpoint["epoch"] + 1
+        bestLoss = checkpoint["best_loss"]
+        f.write("Resuming from epoch {}\n".format(epoch_resume))
+    except FileNotFoundError:
+        f.write("Starting run from scratch\n")
+    
+    return model, optim, scheduler, epoch_resume, bestLoss
+
+def save_checkpoint(self, epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
+        #TODO change this to match original run.
+        # Save checkpoint
+        save = {
+            'epoch': epoch,
+            'state_dict': self.model.module.state_dict(),
+            'period': self.period,
+            'frames': self.frames,
+            'best_loss': bestLoss,
+            'loss': loss,
+            'r2': sklearn.metrics.r2_score(y, yhat),
+            'opt_dict': optim.state_dict(),
+            'scheduler_dict':scheduler.state_dict(),
+        }
+        torch.save(save, os.path.join(output, "checkpoint.pt"))
+        if loss < bestLoss:
+            torch.save(save, os.path.join(output, "best.pt"))
+            bestLoss = loss
+        return bestLoss
     
