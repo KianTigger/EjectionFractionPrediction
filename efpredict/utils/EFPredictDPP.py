@@ -407,7 +407,7 @@ def load_train_objs():
 
 def prepare_dataloader(dataset: Dataset, batch_size: int, num_workers: int = 0,
         pin_memory: bool = True, shuffle: bool = True, drop_last: bool = True):
-    print("is_distributed(): ", is_distributed())
+    # print("is_distributed(): ", is_distributed())
     return DataLoader(
         dataset,
         batch_size=batch_size,
