@@ -365,4 +365,13 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
         efpredict.utils.latexify()
         yhat = np.array(list(map(lambda x: x.mean(), yhat)))
 
-        plot_results(y, yhat, split, output)
+        # Calculate the mean and standard deviation of the predictions and print them
+        mean = np.mean(yhat)
+        std = np.std(yhat)
+        print("Mean: {:.2f}".format(mean))
+        print("Std: {:.2f}".format(std))
+
+        #Print the MAE
+        print("MAE: {:.2f}".format(sklearn.metrics.mean_absolute_error(y, yhat)))
+
+        # plot_results(y, yhat, split, output)
