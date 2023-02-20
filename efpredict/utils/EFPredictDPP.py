@@ -438,7 +438,8 @@ def main(rank: int, world_size: int, save_every: int, batch_size: int):
     print("Rank: ", rank)
     print("Device: ", torch.cuda.current_device())
     
-    trainer = EFPredictDPP(gpu_id=rank, device=torch.device('cuda', rank))
+    # trainer = EFPredictDPP(gpu_id=rank, device=torch.device('cuda', rank))
+    trainer = EFPredictDPP()
     trainer.train()
     destroy_process_group()
 
