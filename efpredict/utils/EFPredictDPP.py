@@ -267,6 +267,7 @@ class EFPredictDPP:
         plt.close(fig)
 
     def train(self):
+        print("Starting training")
         optim, scheduler = self._optimizer_and_scheduler()
         kwargs = self._mean_and_std()
         dataset = self._dataset(kwargs)
