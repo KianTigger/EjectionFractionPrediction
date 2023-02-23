@@ -13,7 +13,8 @@ import tqdm
 import efpredict
 
 # import pretrained r2plus1d_18 model from torchvision
-from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
+from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R3D_18_Weights, mc3_18, MC3_18_Weights
+
 
 
 
@@ -132,19 +133,8 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-     # Set up model
-     #TODO get rid of comments
-    model = torchvision.models.video.__dict__[
-        model_name](pretrained=pretrained)
-    # # model_name](weights="R2Plus1D_18_Weights.DEFAULT") #TODO Should this be changed?
-    #Setup model so if pretrained is true, then use the pretrained weights, otherwise use random weights
-    # if pretrained:
-    #     #TODO make it so if other models are used, it chooses the correct weights
-    #     model = torchvision.models.video.__dict__[
-    #         model_name](weights=R2Plus1D_18_Weights.DEFAULT)
-    # else:
-    #     model = torchvision.models.video.__dict__[
-    #         model_name](weights=None)
+    # Set up model based on model_name
+    model = generate_model(model_name, pretrained)
 
     # Replaced the last layer with a linear layer with 1 output
     model.fc = torch.nn.Linear(model.fc.in_features, 1)
@@ -171,6 +161,31 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
     scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
 
     return output, device, model, optim, scheduler
+
+def generate_model(model_name, pretrained):
+    #TODO implement testing of other models
+    # e.g. mc3_18, r3d_18, r2plus1d_34, mc3_18, r3d_34, r2plus1d_50, r2plus1d_101, r2plus1d_152
+    #https://pytorch.org/vision/0.8/models.html
+    # TODO Checkout resnet models
+    # check that model_name is valid
+    model_name = model_name.lower()
+    assert model_name in ["r2plus1d_18", "mc3_18", "r3d_18"], "Model name must be one of r2plus1d_18, mc3_18, r3d_18"
+    
+    if not pretrained:
+        model = torchvision.models.video.__dict__[
+            model_name](weights=None)
+    else:  
+        #Set weights to default of whichever model is chosen
+        weights = R2Plus1D_18_Weights.DEFAULT
+        if model_name == "mc3_18":
+            weights = MC3_18_Weights.DEFAULT
+        elif model_name == "r3d_18":
+            weights = R3D_18_Weights.DEFAULT
+
+        model = torchvision.models.video.__dict__[
+            model_name](weights=weights)
+
+    return model
 
 def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
@@ -384,6 +399,7 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
         print("Mean: {:.2f}".format(mean))
         print("Std: {:.2f}".format(std))
 
+        #TODO check that y is the real EF
         #Print the MAE
         print("MAE: {:.2f}".format(sklearn.metrics.mean_absolute_error(y, yhat)))
         #Print the RMSE
