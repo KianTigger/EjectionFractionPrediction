@@ -123,6 +123,7 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
     np.random.seed(seed)
     torch.manual_seed(seed)
     
+    # TODO make output more specific so it doesn't overwrite previous runs, e.g. foldername contains features, model, and hyperparameters
     # Set default output directory
     if output is None:
         output = os.path.join("output", "video", "{}_{}_{}_{}".format(
@@ -232,6 +233,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
 
+                #TODO make it create clips around generated systole and diastole frames.
                 if block_size is None:
                     outputs = model(X)
                 else:
