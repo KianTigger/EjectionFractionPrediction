@@ -123,6 +123,9 @@ class EchoLVH(torchvision.datasets.VisionDataset):
                     print("\t", f)
                 raise FileNotFoundError(os.path.join(self.root, "Videos", sorted(missing)[0]))
 
+                
+            ### Original code, volume tracing is not used in this project.
+
             # # Load traces
             # self.frames = collections.defaultdict(list)
             # self.trace = collections.defaultdict(_defaultdict_of_lists)
