@@ -332,8 +332,6 @@ def get_dataset(data_dir, num_train_patients, kwargs):
         dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
     dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
 
-    print(dataset.phase_values)
-
     return dataset
 
 def plot_results(y, yhat, split, output):
