@@ -245,6 +245,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             new_video = np.concatenate(
                 (video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
             # c, f, h, w = video.shape  # pylint: disable=E0633
+        else:
+            new_video = video
         
         return new_video
 
