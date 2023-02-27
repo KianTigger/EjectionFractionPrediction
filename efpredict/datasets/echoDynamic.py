@@ -9,7 +9,7 @@
 
 import os
 import collections
-import pandas
+import pandas as pd
 
 import numpy as np
 import skimage.draw
@@ -35,14 +35,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 ``ESV'' (float): end-systolic volume
                 ``LargeIndex'' (int): index of large (diastolic) frame in video
                 ``SmallIndex'' (int): index of small (systolic) frame in video
-                ``LargeFrame'' (np.array shape=(3, height, width)): normalized large (diastolic) frame
-                ``SmallFrame'' (np.array shape=(3, height, width)): normalized small (systolic) frame
-                ``LargeTrace'' (np.array shape=(height, width)): left ventricle large (diastolic) segmentation
-                    value of 0 indicates pixel is outside left ventricle
-                             1 indicates pixel is inside left ventricle
-                ``SmallTrace'' (np.array shape=(height, width)): left ventricle small (systolic) segmentation
-                    value of 0 indicates pixel is outside left ventricle
-                             1 indicates pixel is inside left ventricle
             Defaults to ``EF''.
         mean (int, float, or np.array shape=(3,), optional): means for all (if scalar) or each (if np.array) channel.
             Used for normalizing the video. Defaults to 0 (video is not shifted).
@@ -75,6 +67,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  pad=None,
                  noise=None,
                  target_transform=None,
+                 use_phase_clips=True,
                  external_test_location=None):
         if root is None:
             root = efpredict.config.DATA_DIR
@@ -94,67 +87,96 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         self.pad = pad
         self.noise = noise
         self.target_transform = target_transform
+        self.use_phase_clips = use_phase_clips
         self.external_test_location = external_test_location
 
         self.fnames, self.outcome = [], []
+        self.phase_values = {}
 
         if self.split == "EXTERNAL_TEST":
             self.fnames = sorted(os.listdir(self.external_test_location))
         else:
-            # Load video-level labels
-            with open(os.path.join(self.root, "FileList.csv")) as f:
-                data = pandas.read_csv(f)
-            data["Split"].map(lambda x: x.upper())
-
-            if self.split != "ALL":
-                data = data[data["Split"] == self.split]
-
-            self.header = data.columns.tolist()
-            self.fnames = data["FileName"].tolist()
-            # Assume avi if no suffix
-            self.fnames = [
-                fn + ".avi" for fn in self.fnames if os.path.splitext(fn)[1] == ""]
-            self.outcome = data.values.tolist()
-
-            # Check that files are present
-            missing = set(self.fnames) - \
-                set(os.listdir(os.path.join(self.root, "Videos")))
-            if len(missing) != 0:
-                print("{} videos could not be found in {}:".format(
-                    len(missing), os.path.join(self.root, "Videos")))
-                for f in sorted(missing):
-                    print("\t", f)
-                raise FileNotFoundError(os.path.join(
-                    self.root, "Videos", sorted(missing)[0]))
+            self.get_labels()
 
             # Original code, volume tracing is not used in this project.
+            # See echonet dynamic repository for loading volume tracing.
 
-            # # Load traces
-            # self.frames = collections.defaultdict(list)
-            # self.trace = collections.defaultdict(_defaultdict_of_lists)
+    def get_labels(self):
+        self.get_EF_Labels()
 
-            # with open(os.path.join(self.root, "VolumeTracings.csv")) as f:
-            #     header = f.readline().strip().split(",")
-            #     assert header == ["FileName", "X1", "Y1", "X2", "Y2", "Frame"]
+        if self.use_phase_clips:
+            self.get_phase_labels()
 
-            #     for line in f:
-            #         filename, x1, y1, x2, y2, frame = line.strip().split(',')
-            #         x1 = float(x1)
-            #         y1 = float(y1)
-            #         x2 = float(x2)
-            #         y2 = float(y2)
-            #         frame = int(frame)
-            #         if frame not in self.trace[filename]:
-            #             self.frames[filename].append(frame)
-            #         self.trace[filename][frame].append((x1, y1, x2, y2))
-            # for filename in self.frames:
-            #     for frame in self.frames[filename]:
-            #         self.trace[filename][frame] = np.array(self.trace[filename][frame])
+        self.check_missing_files()
+    
+    def get_EF_Labels(self):
+        # Load video-level labels
+        with open(os.path.join(self.root, "FileList.csv")) as f:
+            data = pd.read_csv(f)
+        data["Split"].map(lambda x: x.upper())
 
-            # # A small number of videos are missing traces; remove these videos
-            # keep = [len(self.frames[f]) >= 2 for f in self.fnames]
-            # self.fnames = [f for (f, k) in zip(self.fnames, keep) if k]
-            # self.outcome = [f for (f, k) in zip(self.outcome, keep) if k]
+        if self.split != "ALL":
+            data = data[data["Split"] == self.split]
+
+        self.header = data.columns.tolist()
+        self.fnames = data["FileName"].tolist()
+        # Assume avi if no suffix
+        self.fnames = [
+            fn + ".avi" for fn in self.fnames if os.path.splitext(fn)[1] == ""]
+        self.outcome = data.values.tolist()
+
+    def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
+        data = None
+        
+        try: 
+            with open(os.path.join(self.root, filename)) as f:
+                data = pd.read_csv(f)
+
+        except FileNotFoundError:
+            try:
+                with open(os.path.join(self.root, predictionsFileName)) as f:
+                    data = pd.read_csv(f)
+            
+            except FileNotFoundError:
+                print("No phase information found. Will generate phase information.")
+                # TODO, generate phase information from here
+        
+        if data is not None:
+            missing_values = []
+            for _, row in data.iterrows():
+                filename = row[0]
+                ED_Predictions = pd.eval(row[1])
+                ES_Predictions = pd.eval(row[2])
+                if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
+                    missing_values.append(filename)
+                self.phase_values[filename]  = [ED_Predictions, ES_Predictions]
+            
+            if len(missing_values) > 0:
+                print("Missing phase information for {} videos.".format(len(missing_values)))
+                print("Will generate phase information for these videos.")
+                self.generate_phase_predictions(missing_values)
+                # TODO, generate phase information from here
+            
+            self.check_missing_files()
+        
+        else:
+            self.generate_phase_predictions()
+
+    def generate_phase_predictions(self, filenames=None):
+        #TODO generate phase information
+        pass
+
+    def check_missing_files(self):
+        # Check that files are present
+        missing = set(self.fnames) - \
+            set(os.listdir(os.path.join(self.root, "Videos")))
+        if len(missing) != 0:
+            print("{} videos could not be found in {}:".format(
+                len(missing), os.path.join(self.root, "Videos")))
+            for f in sorted(missing):
+                print("\t", f)
+            raise FileNotFoundError(os.path.join(
+                self.root, "Videos", sorted(missing)[0]))
 
     def __getitem__(self, index):
         # Get video path

@@ -219,7 +219,12 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            for (X, outcome) in dataloader:
+            for (X, outcome, phase_values) in dataloader:
+                print(X, outcome)
+                print("X shape: ", X.shape)
+                print("outcome shape: ", outcome.shape)
+                print("phase_values shape: ", phase_values.shape)
+                print("phase_values: ", phase_values)
 
                 y.append(outcome.numpy())
                 X = X.to(device)
@@ -326,6 +331,8 @@ def get_dataset(data_dir, num_train_patients, kwargs):
         indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
         dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
     dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
+
+    print(dataset.phase_values)
 
     return dataset
 
