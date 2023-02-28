@@ -256,7 +256,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             new_video = new_video[0]
         else:
             new_video = np.stack(new_video)
-            
+        
+        #print dimenstion of every video
+        print(new_video.shape)
+
         return new_video
 
     def select_clips_phase(self, video, length, index):
@@ -310,6 +313,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 new_video = np.stack(new_video)
 
         # print dimension of every video
+        print("Clip filename: {}".format(self.fnames[index]))
         print(new_video.shape)
 
         return new_video
