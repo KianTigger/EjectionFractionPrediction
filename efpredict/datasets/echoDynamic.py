@@ -153,7 +153,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             
             if len(missing_values) > 0:
                 print("Missing phase information for {} videos.".format(len(missing_values)))
-                print("Will generate phase information for these videos.")
+                print("TODO TODO TODO Will generate phase information for these videos.")
                 self.generate_phase_predictions(missing_values)
                 # TODO, generate phase information from here
             
@@ -195,9 +195,11 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         length = self.set_length(video)
 
         # Set number of frames
+        # TODO see if this is needed
         video = self.set_frames(video, length)
 
-        video = self.select_clips(video, length)
+        video = self.select_clips_phase(video, length, index)
+        # video = self.select_clips(video, length)
 
         target = self.gather_targets(index)
 
@@ -257,6 +259,57 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         return new_video
 
+    def select_clips_phase(self, video, length, index):
+        c, f, h, w = video.shape
+
+        # get phase information
+        phases = self.phase_values[self.fnames[index][:-4]] # remove .avi
+        ED_Predictions = phases[0]
+        ES_Predictions = phases[1]
+
+        clip_length = self.period * length
+
+        # for each phase, generate a clip from the video and add to the list
+        new_video = ()
+
+        for i in range(min(len(ED_Predictions), len(ES_Predictions))):
+            start = ED_Predictions[i]
+            end = ES_Predictions[i]
+
+            # clip = video, from start to end, regardless of length
+            clip = video[:, start:end, :, :]
+
+            # if clip is too short, pad with zeros
+            if clip.shape[1] < clip_length:
+                clip = np.concatenate(
+                    (clip, np.zeros((c, clip_length - clip.shape[1], h, w), clip.dtype)), axis=1)
+            
+            # if clip is too long, take every nth frame so that it is the correct length
+            if clip.shape[1] > clip_length:
+                # Compute the downsampling factor
+                factor = clip.shape[1] // clip_length
+                
+                # Compute the number of frames to keep after downsampling
+                num_frames = factor * clip_length
+                
+                # Downsample the clip and keep only the first num_frames frames
+                clip = clip[:, ::factor, :, :][:, :num_frames, :, :]
+            
+            new_video = new_video + (clip,)
+
+        # if there are no clips, print a warning with the video name, and return no clips
+        if len(new_video) == 0:
+            print("Warning: No clips found for video {}".format(self.fnames[index]))
+            #return first clip_length frames of video
+            return video[:, :clip_length, :, :]
+        else: 
+            if self.clips == 1:
+                new_video = new_video[0]
+            else:
+                new_video = np.stack(new_video)
+
+        return new_video
+
     def set_frames(self, video, length):
         # Set number of frames
         c, f, h, w = video.shape
@@ -300,6 +353,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         return video_path
 
     def normalise_video(self, video):
+
         # Apply normalization
         if isinstance(self.mean, (float, int)):
             video -= self.mean

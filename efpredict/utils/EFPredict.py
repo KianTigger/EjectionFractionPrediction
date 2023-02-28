@@ -222,12 +222,6 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for (X, outcome) in dataloader:
-                print(X, outcome)
-                print("X shape: ", X.shape)
-                print("outcome shape: ", outcome.shape)
-                # print("phase_values shape: ", phase_values.shape)
-                # print("phase_values: ", phase_values)
-
                 y.append(outcome.numpy())
                 X = X.to(device)
                 outcome = outcome.to(device)
