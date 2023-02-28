@@ -297,7 +297,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 num_frames = factor * clip_length
                 
                 # Downsample the clip and keep only the first num_frames frames
-                clip = clip[:, ::factor, :, :][:, :num_frames, :, :]
+                clip = clip[:, ::factor, :, :][:, :clip_length, :, :]
 
                 # Check that the clip is the correct length
                 if clip.shape[1] != clip_length:
