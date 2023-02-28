@@ -270,7 +270,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         ED_Predictions = phases[0]
         ES_Predictions = phases[1]
 
-        clip_length = self.period * length
+        # clip_length = self.period * length
+        clip_length = length
 
         # for each phase, generate a clip from the video and add to the list
         new_video = ()
