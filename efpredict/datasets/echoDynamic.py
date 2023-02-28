@@ -256,7 +256,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             new_video = new_video[0]
         else:
             new_video = np.stack(new_video)
-
+            
         return new_video
 
     def select_clips_phase(self, video, length, index):
@@ -300,6 +300,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         # if there are no clips, print a warning with the video name, and return no clips
         if len(new_video) == 0:
             print("Warning: No clips found for video {}".format(self.fnames[index]))
+            print(video[:, :clip_length, :, :].shape)
             #return first clip_length frames of video
             return video[:, :clip_length, :, :]
         else: 
@@ -307,6 +308,9 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 new_video = new_video[0]
             else:
                 new_video = np.stack(new_video)
+
+        # print dimension of every video
+        print(new_video.shape)
 
         return new_video
 

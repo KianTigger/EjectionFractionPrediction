@@ -88,7 +88,6 @@ def get_mean_and_std(dataset: torch.utils.data.Dataset,
     s2 = 0.  # sum of squares of elements along channels (ends up as np.array of dimension (channels,))
     for (x, *_) in tqdm.tqdm(dataloader):
         x = x.transpose(0, 1).contiguous().view(3, -1)
-        # x = x.transpose(1, 2).transpose(2, 3).contiguous().view(batch_size, -1, 3)
         n += x.shape[1]
         s1 += torch.sum(x, dim=1).numpy()
         s2 += torch.sum(x ** 2, dim=1).numpy()
