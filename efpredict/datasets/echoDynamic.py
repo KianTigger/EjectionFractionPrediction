@@ -198,8 +198,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         # TODO see if this is needed
         video = self.set_frames(video, length)
 
-        # video = self.select_clips_phase(video, length, index)
-        video = self.select_clips(video, length)
+        video = self.select_clips_phase(video, length, index)
+        # video = self.select_clips(video, length)
 
         target = self.gather_targets(index)
 
