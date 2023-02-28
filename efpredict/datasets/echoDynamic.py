@@ -311,6 +311,27 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             if self.clips == 1:
                 new_video = new_video[0]
             else:
+                # Check that each clip is the same shape
+                for i in range(len(new_video)):
+                    if new_video[i].shape != new_video[0].shape:
+                        print("Warning: Clips are not the same shape")
+                        print("Clip {} shape: {}".format(i, new_video[i].shape))
+                        print("Clip 0 shape: {}".format(new_video[0].shape))
+                        print("Clip filename: {}".format(self.fnames[index]))
+                        # print("Clip shape: {}".format(video.shape))
+                        # print("Clip length: {}".format(clip_length))
+                        # print("Clip period: {}".format(self.period))
+                        # print("Clip shape: {}".format(video.shape))
+                        # print("Clips: {}".format(len(new_video)))
+                        # print("Phases: {}".format(len(phases)))
+                        # print("ED_Predictions: {}".format(len(ED_Predictions)))
+                        # print("ES_Predictions: {}".format(len(ES_Predictions)))
+                        # print("Start: {}".format(start))
+                        # print("End: {}".format(end))
+                        # print("Clip: {}".format(clip.shape))
+                        # print("Factor: {}".format(factor))
+                        # print("Num_frames: {}".format(num_frames))
+                        # print("")
                 new_video = np.stack(new_video)
 
         # print dimension of every video
