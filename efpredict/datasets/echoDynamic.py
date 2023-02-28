@@ -298,6 +298,12 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 
                 # Downsample the clip and keep only the first num_frames frames
                 clip = clip[:, ::factor, :, :][:, :num_frames, :, :]
+
+                # Check that the clip is the correct length
+                if clip.shape[1] != clip_length:
+                    print("Warning: Clip is not the correct length")
+                    print("Clip {} length: {}".format(i, clip.shape[1]))
+                    print("Clip length: {}".format(clip_length))
             
             new_video = new_video + (clip,)
 
