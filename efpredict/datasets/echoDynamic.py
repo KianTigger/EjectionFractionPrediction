@@ -256,9 +256,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             new_video = new_video[0]
         else:
             new_video = np.stack(new_video)
-        
-        #print dimenstion of every video
-        print(new_video.shape)
 
         return new_video
 
@@ -296,53 +293,22 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 # Compute the number of frames to keep after downsampling
                 num_frames = factor * clip_length
                 
+                #TODO using num_frames sometimes results in a clip that is too long, fix or just use clip_length
                 # Downsample the clip and keep only the first num_frames frames
                 clip = clip[:, ::factor, :, :][:, :clip_length, :, :]
-
-                # Check that the clip is the correct length
-                if clip.shape[1] != clip_length:
-                    print("Warning: Clip is not the correct length")
-                    print("Clip {} length: {}".format(i, clip.shape[1]))
-                    print("Clip length: {}".format(clip_length))
             
             new_video = new_video + (clip,)
 
         # if there are no clips, print a warning with the video name, and return no clips
         if len(new_video) == 0:
             print("Warning: No clips found for video {}".format(self.fnames[index]))
-            print(video[:, :clip_length, :, :].shape)
             #return first clip_length frames of video
             return video[:, :clip_length, :, :]
         else: 
             if self.clips == 1:
                 new_video = new_video[0]
             else:
-                # Check that each clip is the same shape
-                for i in range(len(new_video)):
-                    if new_video[i].shape != new_video[0].shape:
-                        print("Warning: Clips are not the same shape")
-                        print("Clip {} shape: {}".format(i, new_video[i].shape))
-                        print("Clip 0 shape: {}".format(new_video[0].shape))
-                        print("Clip filename: {}".format(self.fnames[index]))
-                        # print("Clip shape: {}".format(video.shape))
-                        # print("Clip length: {}".format(clip_length))
-                        # print("Clip period: {}".format(self.period))
-                        # print("Clip shape: {}".format(video.shape))
-                        # print("Clips: {}".format(len(new_video)))
-                        # print("Phases: {}".format(len(phases)))
-                        # print("ED_Predictions: {}".format(len(ED_Predictions)))
-                        # print("ES_Predictions: {}".format(len(ES_Predictions)))
-                        # print("Start: {}".format(start))
-                        # print("End: {}".format(end))
-                        # print("Clip: {}".format(clip.shape))
-                        # print("Factor: {}".format(factor))
-                        # print("Num_frames: {}".format(num_frames))
-                        # print("")
                 new_video = np.stack(new_video)
-
-        # print dimension of every video
-        print("Clip filename: {}".format(self.fnames[index]))
-        print(new_video.shape)
 
         return new_video
 
