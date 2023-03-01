@@ -55,8 +55,8 @@ def loadvideo(filename: str) -> np.ndarray:
 
 def get_mean_and_std(dataset: torch.utils.data.Dataset,
                      samples: int = 128,
-                     batch_size: int = 8,
-                     num_workers: int = 4):
+                     batch_size: int = 8, #8
+                     num_workers: int = 4): #4
     """Computes mean and std from samples from a Pytorch dataset.
 
     Args:
