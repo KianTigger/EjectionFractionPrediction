@@ -166,8 +166,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         self.get_EF_Labels(filename=outputfilename)
 
-        return
-
     def get_EF_Labels(self, filename="FileList.csv"):
         # Load video-level labels
         with open(os.path.join(self.root, filename)) as f:

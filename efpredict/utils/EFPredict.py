@@ -222,7 +222,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
     with torch.set_grad_enabled(train):
         #TODO check this doesn't stop 1 epoch short
-        with tqdm.tqdm(total=len(dataloader), initial=1) as pbar:
+        with tqdm.tqdm(total=len(dataloader)) as pbar:
             for (X, outcome) in dataloader:
                 y.append(outcome.numpy())
                 X = X.to(device)
