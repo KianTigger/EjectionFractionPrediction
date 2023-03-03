@@ -339,6 +339,9 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         # get phase information
         phases = self.phase_values[key]  # remove .avi
 
+        ED_Predictions = phases[0]
+        ES_Predictions = phases[1]
+
         # clip_length = self.period * length
         clip_length = length
 
