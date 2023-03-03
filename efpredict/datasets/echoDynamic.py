@@ -332,14 +332,12 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
     def select_clips_phase(self, video, length, index):
         c, f, h, w = video.shape
 
+        key = self.fnames[index]
+        # if key ends with .avi, remove it
+        if key.endswith(".avi"):
+            key = key[:-4]
         # get phase information
-        phases = self.phase_values[self.fnames[index]]  # remove .avi
-        # if phases ends with .avi, remove it
-        if phases[0][-1].endswith(".avi"):
-            phases[0] = [x[:-4] for x in phases[0]]
-            phases[1] = [x[:-4] for x in phases[1]]
-        ED_Predictions = phases[0]
-        ES_Predictions = phases[1]
+        phases = self.phase_values[key]  # remove .avi
 
         # clip_length = self.period * length
         clip_length = length
