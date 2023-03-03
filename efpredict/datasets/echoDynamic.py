@@ -129,8 +129,14 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
             for row in data.iterrows():
                 name = row[1]["FileName"]
-                ED_Predictions = self.phase_values[name][0]
-                ES_Predictions = self.phase_values[name][1]
+                try:
+                    ED_Predictions = self.phase_values[name][0]
+                    ES_Predictions = self.phase_values[name][1]
+                except KeyError:
+                    print(f"Warning: {name} has no ED or ES predictions!")
+                    ED_Predictions = [0]
+                    ES_Predictions = [self.length]
+                    
                 written_line = False
                 if not ED_Predictions or not ES_Predictions:
                     # TODO fix this, by generating the phase labels

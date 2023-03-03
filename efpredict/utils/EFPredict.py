@@ -69,7 +69,7 @@ def run(
 ):
     # TODO Write docstrings, and explanations for args
 
-    output, device, model, optim, scheduler = setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period)
+    output, device, model, optim, scheduler = setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs)
 
     kwargs = mean_and_std(data_dir, task, frames, period)
 
@@ -118,7 +118,7 @@ def run(
         if run_test:
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
 
-def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period):
+def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
     # Seed RNGs
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -126,8 +126,9 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
     # TODO make output more specific so it doesn't overwrite previous runs, e.g. foldername contains features, model, and hyperparameters
     # Set default output directory
     if output is None:
-        output = os.path.join("output", "video", "{}_{}_{}_{}".format(
-            model_name, frames, period, "pretrained" if pretrained else "random"))
+        pretrained_str = "pretrained" if pretrained else "random"
+        output_dir = f"output-{pretrained_str}-num_epochs-{num_epochs}"
+        output = os.path.join(output_dir, "video", f"{model_name}_{frames}_{period}_{pretrained_str}")
     os.makedirs(output, exist_ok=True)
 
     # Set device for computations
