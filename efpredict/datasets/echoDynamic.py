@@ -64,6 +64,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  length=16, period=2,
                  max_length=250,
                  clips=1,
+                 createAllClips=False,
                  pad=None,
                  noise=None,
                  target_transform=None,
@@ -84,6 +85,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         self.max_length = max_length
         self.period = period
         self.clips = clips
+        self.createAllClips = createAllClips
         self.pad = pad
         self.noise = noise
         self.target_transform = target_transform
@@ -102,33 +104,86 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             # See echonet dynamic repository for loading volume tracing.
 
     def get_labels(self):
-        self.get_EF_Labels()
 
         if self.use_phase_clips:
-            self.get_phase_labels()
+            self.create_EF_Labels()
+
+        else:
+            self.get_EF_Labels()
 
         self.check_missing_files()
-    
-    def get_EF_Labels(self):
-        # Load video-level labels
-        with open(os.path.join(self.root, "FileList.csv")) as f:
+
+    def create_EF_Labels(self, filename="FileList.csv", outputfilename="FileListPhaseClips.csv"):
+
+        self.get_phase_labels()
+
+        with open(os.path.join(self.root, filename)) as f:
             data = pd.read_csv(f)
-        data["Split"].map(lambda x: x.upper())
+
+        self.fnames = data["FileName"].tolist()
+
+        # Create a new csv file with the new file names, overwrite if it already exists
+        with open(os.path.join(self.root, outputfilename), 'w', newline='') as f:
+            headers = data.columns.values.tolist() + ['StartFrame', 'EndFrame']
+            f.write(','.join(headers) + '\n')
+
+            for row in data.iterrows():
+                name = row[1]["FileName"]
+                ED_Predictions = self.phase_values[name][0]
+                ES_Predictions = self.phase_values[name][1]
+                written_line = False
+                if not ED_Predictions or not ES_Predictions:
+                    # TODO fix this, by generating the phase labels
+                    # print(f"Warning: {name} has no ED or ES predictions!")
+                    f.write(
+                        f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
+                else:
+                    for j in range(min(len(ED_Predictions), len(ES_Predictions))):
+                        # ED_Prediciton must be less than ES_Prediciton
+                        if ED_Predictions[j] > ES_Predictions[j]:
+                            continue
+
+                        # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
+                        if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
+                            continue
+                        # new_name = f"{name}_phase_{j}"
+                        f.write(
+                            f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
+                        written_line = True
+
+                if not written_line:
+                    # TODO fix this, by generating the phase labels
+                    # print(f"Warning: {name} has no ED or ES predictions!")
+                    f.write(
+                        f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
+
+        self.get_EF_Labels(filename=outputfilename)
+
+        return
+
+    def get_EF_Labels(self, filename="FileList.csv"):
+        # Load video-level labels
+        with open(os.path.join(self.root, filename)) as f:
+            data = pd.read_csv(f, index_col=False)
+
+        data['Split'].map(lambda x: x.upper())
 
         if self.split != "ALL":
             data = data[data["Split"] == self.split]
 
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()
+
         # Assume avi if no suffix
         self.fnames = [
             fn + ".avi" for fn in self.fnames if os.path.splitext(fn)[1] == ""]
+
         self.outcome = data.values.tolist()
 
     def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
         data = None
-        
-        try: 
+
+        try:
             with open(os.path.join(self.root, filename)) as f:
                 data = pd.read_csv(f)
 
@@ -136,34 +191,43 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             try:
                 with open(os.path.join(self.root, predictionsFileName)) as f:
                     data = pd.read_csv(f)
-            
+
             except FileNotFoundError:
                 print("No phase information found. Will generate phase information.")
                 # TODO, generate phase information from here
-        
+
         if data is not None:
             missing_values = []
             for _, row in data.iterrows():
-                filename = row[0]
-                ED_Predictions = pd.eval(row[1])
-                ES_Predictions = pd.eval(row[2])
-                if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
-                    missing_values.append(filename)
-                self.phase_values[filename]  = [ED_Predictions, ES_Predictions]
-            
+                if self.createAllClips:
+                    number_of_frames = row["NumberOfFrames"]
+                    length = self.length
+                    # TODO, change this to be a list of tuples
+                    self.phase_values[filename] = [list(range(
+                        0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
+                else:
+                    filename = row[0]
+                    ED_Predictions = pd.eval(row[1])
+                    ES_Predictions = pd.eval(row[2])
+                    if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
+                        missing_values.append(filename)
+                    self.phase_values[filename] = [
+                        ED_Predictions, ES_Predictions]
+
             if len(missing_values) > 0:
-                print("Missing phase information for {} videos.".format(len(missing_values)))
+                print("Missing phase information for {} videos.".format(
+                    len(missing_values)))
                 print("TODO TODO TODO Will generate phase information for these videos.")
                 self.generate_phase_predictions(missing_values)
                 # TODO, generate phase information from here
-            
+
             self.check_missing_files()
-        
+
         else:
             self.generate_phase_predictions()
 
     def generate_phase_predictions(self, filenames=None):
-        #TODO generate phase information
+        # TODO generate phase information
         pass
 
     def check_missing_files(self):
@@ -184,7 +248,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         # Load video into np.array
         video = efpredict.utils.loadvideo(video_path).astype(np.float32)
-        
+
         if self.noise is not None:
             # Add simulated noise (black out random pixels)
             video = self.add_random_noise(video)
@@ -231,7 +295,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         temp = np.zeros((c, l, h + 2 * self.pad, w +
                         2 * self.pad), dtype=video.dtype)
         temp[:, :, self.pad:-self.pad, self.pad:-
-                self.pad] = video  # pylint: disable=E1130
+             self.pad] = video  # pylint: disable=E1130
         i, j = np.random.randint(0, 2 * self.pad, 2)
         new_video = temp[:, :, i:(i + h), j:(j + w)]
 
@@ -250,7 +314,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         # Select clips from video
         new_video = tuple(video[:, s + self.period *
-                      np.arange(length), :, :] for s in start)
+                                np.arange(length), :, :] for s in start)
 
         if self.clips == 1:
             new_video = new_video[0]
@@ -263,7 +327,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         c, f, h, w = video.shape
 
         # get phase information
-        phases = self.phase_values[self.fnames[index][:-4]] # remove .avi
+        phases = self.phase_values[self.fnames[index][:-4]]  # remove .avi
         ED_Predictions = phases[0]
         ES_Predictions = phases[1]
 
@@ -284,27 +348,28 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             if clip.shape[1] < clip_length:
                 clip = np.concatenate(
                     (clip, np.zeros((c, clip_length - clip.shape[1], h, w), clip.dtype)), axis=1)
-            
+
             # if clip is too long, take every nth frame so that it is the correct length
             if clip.shape[1] > clip_length:
                 # Compute the downsampling factor
                 factor = clip.shape[1] // clip_length
-                
+
                 # Compute the number of frames to keep after downsampling
                 num_frames = factor * clip_length
-                
-                #TODO using num_frames sometimes results in a clip that is too long, fix or just use clip_length
+
+                # TODO using num_frames sometimes results in a clip that is too long, fix or just use clip_length
                 # Downsample the clip and keep only the first num_frames frames
                 clip = clip[:, ::factor, :, :][:, :clip_length, :, :]
-            
+
             new_video = new_video + (clip,)
 
         # if there are no clips, print a warning with the video name, and return no clips
         if len(new_video) == 0:
-            print("Warning: No clips found for video {}".format(self.fnames[index]))
-            #return first clip_length frames of video
+            print("Warning: No clips found for video {}".format(
+                self.fnames[index]))
+            # return first clip_length frames of video
             return video[:, :clip_length, :, :]
-        else: 
+        else:
             if self.clips == 1:
                 new_video = new_video[0]
             else:
@@ -324,7 +389,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             # c, f, h, w = video.shape  # pylint: disable=E0633
         else:
             new_video = video
-        
+
         return new_video
 
     def add_random_noise(self, video):
@@ -368,7 +433,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             video /= self.std.reshape(3, 1, 1, 1)
 
         return video
-        
+
     def gather_targets(self, index):
         # Gather targets
         target = []
