@@ -354,34 +354,11 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             # clip = video, from start to end, regardless of length
             clip = video[:, start:end, :, :]
 
-            # # if clip is too short, pad with zeros
-            # if clip.shape[1] < clip_length:
-            #     clip = np.concatenate(
-            #         (clip, np.zeros((c, clip_length - clip.shape[1], h, w), clip.dtype)), axis=1)
-            
-            # if clip is too short, repeat every nth frame to bring the clip to the desired length
+            # if clip is too short, pad with zeros
+            # TODO Make it so it uses either interpolation, or repeating frames throughout the clip
             if clip.shape[1] < clip_length:
-                num_repeats = clip_length - clip.shape[1]
-                final_clip = []
-                counter = 0
-                for _ in range(clip.shape[1]):
-                    # append clip.shape[1][counter] frame, increase counter unless counter % num_repeats == 0,
-                    final_clip.append(clip[:, counter, :, :])
-                    if counter % num_repeats != 0:
-                        counter += 1
-                clip = np.concatenate(final_clip, axis=1)
-
-                #print warning if clip is still too short
-                if clip.shape[1] < clip_length:
-                    print("Warning: clip is still too short for video {}".format(
-                        self.fnames[index]))
-
-                #print warning if clip is too long
-                if clip.shape[1] > clip_length:
-                    print("Warning: clip is too long for video {}".format(
-                        self.fnames[index]))
-
-
+                clip = np.concatenate(
+                    (clip, np.zeros((c, clip_length - clip.shape[1], h, w), clip.dtype)), axis=1)
 
             # if clip is too long, take every nth frame so that it is the correct length
             if clip.shape[1] > clip_length:
