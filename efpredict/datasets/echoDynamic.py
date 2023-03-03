@@ -136,6 +136,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                     print(f"Warning: {name} has no ED or ES predictions!")
                     ED_Predictions = [0]
                     ES_Predictions = [self.length]
+                    self.phase_values[name] = [ED_Predictions, ES_Predictions]
                     
                 written_line = False
                 if not ED_Predictions or not ES_Predictions:
