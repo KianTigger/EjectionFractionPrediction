@@ -30,11 +30,6 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         ValueError: An error occurred while reading the video
     """
 
-    # if filename starts with ../Datasets/EchoNet-LVH/
-    if filename.startswith('../Datasets/EchoNet-LVH/'):
-        filename = '../Datasets/EchoNet-LVH/Batch2/0XB826FD24E4CBCD31.avi'
-
-
     if not os.path.exists(filename):
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)

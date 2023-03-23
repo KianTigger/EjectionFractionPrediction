@@ -280,7 +280,6 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     #Check whether unlabelled_X is valid, if not, skip consistency loss
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0:
-                        print("unlabelled_X: ", unlabelled_X)
                         unlabelled_X = unlabelled_X.to(device)
 
                         # Compute consistency loss between labelled and unlabelled data
