@@ -93,7 +93,6 @@ def run(
 
                 unlabelled_dataloader = None
                 if phase == "train":
-                    print("Number of samples in the unlabelled dataset:", len(dataset["unlabelled"]))
 
                     unlabelled_dataloader = torch.utils.data.DataLoader(
                         dataset["unlabelled"], batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=True)
@@ -224,7 +223,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     yhat = []
     y = []
 
-    print("dataloder: ", dataloader)
+    unlabelled_iterator = iter(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
         #TODO check this doesn't stop 1 epoch short
@@ -261,7 +260,11 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
                 if train and unlabelled_dataloader is not None:
                     # Sample a batch from the unlabelled dataset
-                    unlabelled_X = next(iter(unlabelled_dataloader))
+                    try:
+                        unlabelled_X = next(unlabelled_dataloader)
+                    except StopIteration:
+                        unlabelled_dataloader = iter(unlabelled_dataloader)
+                        unlabelled_X = next(unlabelled_dataloader)
                     unlabelled_X = unlabelled_X.to(device)
 
                     # Compute consistency loss between labelled and unlabelled data
