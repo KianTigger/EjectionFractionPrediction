@@ -29,38 +29,31 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         FileNotFoundError: Could not find `filename`
         ValueError: An error occurred while reading the video
     """
-    print("filename: ", filename)
-    # TODO remove this as it's for testing
-    filename = '../Datasets/EchoNet-LVH/Batch2/0XB826FD24E4CBCD31.avi'
 
-    print("filename: ", filename)
+    # if filename starts with ../Datasets/EchoNet-LVH/
+    if filename.startswith('../Datasets/EchoNet-LVH/'):
+        filename = '../Datasets/EchoNet-LVH/Batch2/0XB826FD24E4CBCD31.avi'
+
 
     if not os.path.exists(filename):
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)
 
-    print("capture: ", capture)
-
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    print("frame_count: ", frame_count)
+    if frame_count == 0:
+        return None
 
     v = []
 
     for _ in range(frame_count):
         ret, frame = capture.read()
-        print("ret: ", ret)
-        print("frame: ", frame)
         if not ret:
             break
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, target_size)
         v.append(frame)
-    
-    # Add this check after the loop that reads the video frames
-    if len(v) == 0:
-        raise ValueError(f"No frames were read from the video file {filename}")
 
     v = np.stack(v).transpose((3, 0, 1, 2))
 
