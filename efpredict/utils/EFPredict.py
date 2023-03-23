@@ -261,10 +261,10 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 if train and unlabelled_dataloader is not None:
                     # Sample a batch from the unlabelled dataset
                     try:
-                        unlabelled_X = next(unlabelled_dataloader)
+                        unlabelled_X = next(unlabelled_iterator)
                     except StopIteration:
-                        unlabelled_dataloader = iter(unlabelled_dataloader)
-                        unlabelled_X = next(unlabelled_dataloader)
+                        unlabelled_iterator = iter(unlabelled_dataloader)
+                        unlabelled_X = next(unlabelled_iterator)
                     unlabelled_X = unlabelled_X.to(device)
 
                     # Compute consistency loss between labelled and unlabelled data
