@@ -15,7 +15,7 @@ import tqdm
 from . import EFPredict, EFPredictDPP
 
 
-def loadvideo(filename: str) -> np.ndarray:
+def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
     """Loads a video from a file.
 
     Args:
@@ -38,6 +38,9 @@ def loadvideo(filename: str) -> np.ndarray:
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    # Check if the frame size matches the target size
+    resize_needed = (frame_width != target_size[0]) or (frame_height != target_size[1])
+
     v = np.zeros((frame_count, frame_height, frame_width, 3), np.uint8)
 
     for count in range(frame_count):
@@ -46,6 +49,11 @@ def loadvideo(filename: str) -> np.ndarray:
             raise ValueError("Failed to load frame #{} of {}.".format(count, filename))
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Resize the frame if necessary
+        if resize_needed:
+            frame = cv2.resize(frame, target_size)
+
         v[count, :, :] = frame
 
     v = v.transpose((3, 0, 1, 2))

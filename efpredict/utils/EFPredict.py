@@ -345,11 +345,7 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
 
-
-    print("Loading unlabelled dataset")
-    print("data_dir: ", data_dir)
     dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
-
 
     # TODO again replace efpredict with own file/functions.
     dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
@@ -358,8 +354,6 @@ def get_dataset(data_dir, num_train_patients, kwargs):
         indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
         dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
     dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
-
-    
 
     return dataset
 
