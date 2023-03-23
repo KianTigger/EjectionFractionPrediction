@@ -35,28 +35,19 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
     capture = cv2.VideoCapture(filename)
 
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # Check if the frame size matches the target size
-    resize_needed = (frame_width != target_size[0]) or (frame_height != target_size[1])
+    v = []
 
-    v = np.zeros((frame_count, frame_height, frame_width, 3), np.uint8)
-
-    for count in range(frame_count):
+    for _ in range(frame_count):
         ret, frame = capture.read()
         if not ret:
-            raise ValueError("Failed to load frame #{} of {}.".format(count, filename))
+            break
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, target_size)
+        v.append(frame)
 
-        # Resize the frame if necessary
-        if resize_needed:
-            frame = cv2.resize(frame, target_size)
-
-        v[count, :, :] = frame
-
-    v = v.transpose((3, 0, 1, 2))
+    v = np.stack(v).transpose((3, 0, 1, 2))
 
     return v
 
