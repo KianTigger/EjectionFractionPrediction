@@ -264,7 +264,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     output = next(iter(unlabelled_dataloader))
                     print("output.shape: ", output.shape)
                     print("output: ", output)
-                    unlabelled_X = output[0]
+                    # unlabelled_X = output[0]
                     print("unlabelled_X: ", unlabelled_X)
                     unlabelled_X = unlabelled_X.to(device)
 
