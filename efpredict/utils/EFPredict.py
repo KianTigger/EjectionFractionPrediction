@@ -284,6 +284,14 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
                         # Compute consistency loss between labelled and unlabelled data
                         unlabelled_outputs = model(unlabelled_X)
+                        size_diff = outputs.size(0) - unlabelled_outputs.size(0)
+                        # Pad the smaller tensor with zeros
+                        if size_diff > 0:
+                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:])
+                            unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
+                        elif size_diff < 0:
+                            padding = torch.zeros(-size_diff, *outputs.size()[1:])
+                            outputs = torch.cat((outputs, padding), dim=0)
                         consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
 
                         # Add consistency loss to the original loss
