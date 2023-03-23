@@ -46,6 +46,10 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, target_size)
         v.append(frame)
+    
+    # Add this check after the loop that reads the video frames
+    if len(v) == 0:
+        raise ValueError(f"No frames were read from the video file {filename}")
 
     v = np.stack(v).transpose((3, 0, 1, 2))
 
