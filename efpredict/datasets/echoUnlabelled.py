@@ -84,13 +84,17 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
         # Iterate through files in batch folders
         for batch_folder in batch_folders:
             batch_path = os.path.join(self.root, batch_folder)
-            # print number of files in batch folder
             for fname in os.listdir(batch_path):
                 if fname.lower().endswith('.avi'):
                     fname_no_ext = os.path.splitext(fname)[0]
 
                     if fname_no_ext in data:
                         updated_data[fname_no_ext] = os.path.join(batch_folder, fname)
+
+        # Remove filenames not found in any batch from data
+        filenames_to_remove = set(data.keys()) - set(updated_data.keys())
+        for fname in filenames_to_remove:
+            del data[fname]
 
         return updated_data
 
