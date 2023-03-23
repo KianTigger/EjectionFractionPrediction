@@ -91,9 +91,7 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
                     if fname_no_ext in data:
                         updated_data[fname_no_ext] = os.path.join(batch_folder, fname)
 
-        # Remove filenames not found in any batch from data
-        data = np.array(list(updated_data.keys()))
-
+        data = np.array(list(updated_data.values()))
         return data
 
     def check_missing_files(self):
@@ -156,6 +154,7 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
             video_path = os.path.join(
                 self.root, "ProcessedStrainStudyA4c", self.fnames[index])
         else:
+            list(self.fnames)[index]
             video_path = os.path.join(self.root, list(self.fnames)[index])
             # video_path = os.path.join(self.root, self.fnames[index])
 
