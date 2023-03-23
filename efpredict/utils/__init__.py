@@ -30,16 +30,23 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         ValueError: An error occurred while reading the video
     """
 
+    # TODO remove this as it's for testing
+    filename = 'Batch2/0XB826FD24E4CBCD31.avi'
+
     if not os.path.exists(filename):
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)
 
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
+    print("frame_count: ", frame_count)
+
     v = []
 
     for _ in range(frame_count):
         ret, frame = capture.read()
+        print("ret: ", ret)
+        print("frame: ", frame)
         if not ret:
             break
 
