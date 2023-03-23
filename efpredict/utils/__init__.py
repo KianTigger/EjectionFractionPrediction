@@ -29,7 +29,7 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         FileNotFoundError: Could not find `filename`
         ValueError: An error occurred while reading the video
     """
-
+    print("filename: ", filename)
     # TODO remove this as it's for testing
     filename = 'Batch2/0XB826FD24E4CBCD31.avi'
 
