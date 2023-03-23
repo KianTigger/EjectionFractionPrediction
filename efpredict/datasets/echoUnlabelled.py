@@ -62,8 +62,6 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
 
         data = self.update_batch_paths(data)
 
-        print("data: ", data)
-
         self.fnames = list(data)
 
     def update_batch_paths(self, data):
