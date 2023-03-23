@@ -126,7 +126,7 @@ def run(
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
 
 def custom_collate(batch):
-    batch = list(filter(lambda x: x[0] is not None, batch))
+    batch = list(filter(lambda x: x is not None, batch))
     return default_collate(batch)
 
 def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
