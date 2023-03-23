@@ -1,5 +1,5 @@
 build/
-output/
+output*/
 .ipynb_checkpoints/
 __pycache__/
 *.swp

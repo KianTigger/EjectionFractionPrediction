@@ -72,8 +72,6 @@ def run(
 
     dataset = get_dataset(data_dir, num_train_patients, kwargs)
 
-
-
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 
@@ -91,14 +89,7 @@ def run(
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
-                unlabelled_dataloader = None
-                if phase == "train":
-                    print("Number of samples in the unlabelled dataset:", len(dataset["unlabelled"]))
-
-                    unlabelled_dataloader = torch.utils.data.DataLoader(
-                        dataset["unlabelled"], batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=True)
-
-                loss, yhat, y = run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -195,7 +186,7 @@ def generate_model(model_name, pretrained):
 
     return model
 
-def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None):
+def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:
@@ -259,23 +250,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
-                if train and unlabelled_dataloader is not None:
-                    # Sample a batch from the unlabelled dataset
-                    unlabelled_X, _ = next(iter(unlabelled_dataloader))
-                    unlabelled_X = unlabelled_X.to(device)
-
-                    # Compute consistency loss between labelled and unlabelled data
-                    unlabelled_outputs = model(unlabelled_X)
-                    consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-
-                    # Add consistency loss to the original loss
-                    loss += consistency_loss
-
-                    optim.zero_grad()
-                    loss.backward()
-                    optim.step()
-
-                elif train:
+                if train:
                     optim.zero_grad()
                     loss.backward()
                     optim.step()
@@ -344,13 +319,6 @@ def mean_and_std(data_dir, task, frames, period):
 def get_dataset(data_dir, num_train_patients, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
-
-
-    print("Loading unlabelled dataset")
-    print("data_dir: ", data_dir)
-    dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
-
-
     # TODO again replace efpredict with own file/functions.
     dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
     if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
@@ -359,16 +327,7 @@ def get_dataset(data_dir, num_train_patients, kwargs):
         dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
     dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
 
-    
-
     return dataset
-
-def get_unlabelled_dataset(data_dir):
-    #TODO set up own unlabelled dataset, may need to change root
-    print("Loading unlabelled dataset")
-    unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
-    print("unlabelled dataset: ", unlabelled_dataset )
-    return unlabelled_dataset
 
 def plot_results(y, yhat, split, output):
         # Plot actual and predicted EF
