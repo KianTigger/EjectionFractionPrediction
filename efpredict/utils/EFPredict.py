@@ -126,9 +126,12 @@ def run(
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
 
 def custom_collate(batch):
+    input_shape = (3, 112, 112)  # Assuming grayscale images with a single channel
+    output_shape = (1,)          # Assuming a single output value
+
     batch = list(filter(lambda x: x is not None, batch))
     if len(batch) == 0:
-        return torch.tensor([]), torch.tensor([])
+        return torch.empty(0, *input_shape), torch.empty(0, *output_shape)
     return default_collate(batch)
 
 def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
@@ -231,8 +234,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     yhat = []
     y = []
 
-    if unlabelled_dataloader is not None:
-        unlabelled_iterator = iter(unlabelled_dataloader)
+    unlabelled_iterator = iter(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
         #TODO check this doesn't stop 1 epoch short
@@ -274,20 +276,20 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X = next(unlabelled_iterator)
+                    unlabelled_X = unlabelled_X.to(device)
 
-                    if len(unlabelled_X) == 0:
-                        unlabelled_dataloader = None
-                    else:
-                        unlabelled_X = unlabelled_X.to(device)
+                    # Compute consistency loss between labelled and unlabelled data
+                    unlabelled_outputs = model(unlabelled_X)
+                    consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
 
-                        # Compute consistency loss between labelled and unlabelled data
-                        unlabelled_outputs = model(unlabelled_X)
-                        consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+                    # Add consistency loss to the original loss
+                    loss += consistency_loss
 
-                        # Add consistency loss to the original loss
-                        loss += consistency_loss
+                    optim.zero_grad()
+                    loss.backward()
+                    optim.step()
 
-                if train:
+                elif train:
                     optim.zero_grad()
                     loss.backward()
                     optim.step()
