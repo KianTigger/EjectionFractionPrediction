@@ -276,14 +276,18 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X = next(unlabelled_iterator)
-                    unlabelled_X = unlabelled_X.to(device)
 
-                    # Compute consistency loss between labelled and unlabelled data
-                    unlabelled_outputs = model(unlabelled_X)
-                    consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+                    #Check whether unlabelled_X is valid, if not, skip consistency loss
 
-                    # Add consistency loss to the original loss
-                    loss += consistency_loss
+                    if len(unlabelled_X) > 0 and unlabelled_X is not None: 
+                        unlabelled_X = unlabelled_X.to(device)
+
+                        # Compute consistency loss between labelled and unlabelled data
+                        unlabelled_outputs = model(unlabelled_X)
+                        consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+
+                        # Add consistency loss to the original loss
+                        loss += consistency_loss
 
                     optim.zero_grad()
                     loss.backward()
