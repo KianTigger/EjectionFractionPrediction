@@ -274,7 +274,6 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X = next(unlabelled_iterator)
-                    unlabelled_X = unlabelled_X.to(device)
 
                     if len(unlabelled_X) == 0:
                         unlabelled_dataloader = None
