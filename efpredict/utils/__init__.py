@@ -39,6 +39,8 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)
 
+    print("capture: ", capture)
+
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     print("frame_count: ", frame_count)
