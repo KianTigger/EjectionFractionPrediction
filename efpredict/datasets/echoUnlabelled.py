@@ -62,7 +62,9 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
 
         data = self.update_batch_paths(data)
 
-        self.fnames = data.keys()
+        print("data: ", data)
+
+        self.fnames = list(data)
 
     def update_batch_paths(self, data):
         # Find existing batch folders
@@ -92,11 +94,9 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
                         updated_data[fname_no_ext] = os.path.join(batch_folder, fname)
 
         # Remove filenames not found in any batch from data
-        filenames_to_remove = set(data.keys()) - set(updated_data.keys())
-        for fname in filenames_to_remove:
-            del data[fname]
+        data = np.array(list(updated_data.keys()))
 
-        return updated_data
+        return data
 
     def check_missing_files(self):
         # Check that files are present
