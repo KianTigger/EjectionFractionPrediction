@@ -127,6 +127,8 @@ def run(
 
 def custom_collate(batch):
     batch = list(filter(lambda x: x is not None, batch))
+    if len(batch) == 0:
+        return torch.tensor([]), torch.tensor([])
     return default_collate(batch)
 
 def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
