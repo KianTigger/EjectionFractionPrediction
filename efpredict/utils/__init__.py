@@ -33,6 +33,8 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
     # TODO remove this as it's for testing
     filename = '../Datasets/EchoNet-LVH/Batch2/0XB826FD24E4CBCD31.avi'
 
+    print("filename: ", filename)
+
     if not os.path.exists(filename):
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)
