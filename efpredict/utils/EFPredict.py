@@ -6,6 +6,7 @@ import numpy as np
 import click
 import matplotlib.pyplot as plt
 import torch
+from torch.utils.data._utils.collate import default_collate
 import torchvision
 import sklearn.metrics
 import tqdm
@@ -95,7 +96,8 @@ def run(
                 if phase == "train":
 
                     unlabelled_dataloader = torch.utils.data.DataLoader(
-                        dataset["unlabelled"], batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=True)
+                        dataset["unlabelled"], batch_size=batch_size, num_workers=num_workers, shuffle=True, 
+                        pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=custom_collate)
 
                 loss, yhat, y = run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
@@ -122,6 +124,10 @@ def run(
 
         if run_test:
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
+
+def custom_collate(batch):
+    batch = list(filter(lambda x: x[0] is not None, batch))
+    return default_collate(batch)
 
 def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
     # Seed RNGs
