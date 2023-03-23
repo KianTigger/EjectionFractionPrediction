@@ -154,7 +154,8 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
             video_path = os.path.join(
                 self.root, "ProcessedStrainStudyA4c", self.fnames[index])
         else:
-            video_path = os.path.join(self.root, self.fnames[index])
+            video_path = os.path.join(self.root, list(self.fnames)[index])
+            # video_path = os.path.join(self.root, self.fnames[index])
 
         return video_path
     
