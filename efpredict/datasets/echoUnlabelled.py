@@ -124,12 +124,11 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
         video_path = self.video_path(index)
 
         # Load video into np.array
-        video = efpredict.utils.loadvideo(video_path)
-
-        if video is None:
+        try:
+            video = efpredict.utils.loadvideo(video_path).astype(np.float32)
+        except ValueError as e:
+            print(f"Error loading video at {video_path}: {e}")
             return None
-        
-        video = video.astype(np.float32)
 
         if self.noise is not None:
             # Add simulated noise (black out random pixels)

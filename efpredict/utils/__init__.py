@@ -41,9 +41,6 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
 
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    if frame_count == 0:
-        return None
-
     v = []
 
     for _ in range(frame_count):
