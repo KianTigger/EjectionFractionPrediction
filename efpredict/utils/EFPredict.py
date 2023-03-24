@@ -234,16 +234,12 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     yhat = []
     y = []
 
-    unlabelled_iterator = iter(unlabelled_dataloader)
+    if unlabelled_dataloader is not None:
+        unlabelled_iterator = iter(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            
-            for i, (X, outcome) in enumerate(dataloader):
-
-                if i < 255:
-                    pbar.update(1)  # Update progress bar for each iteration
-                    continue
+            for (X, outcome) in dataloader:
 
                 y.append(outcome.numpy())
                 X = X.to(device)
@@ -282,7 +278,17 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X = next(unlabelled_iterator)
 
-                    #Check whether unlabelled_X is valid, if not, skip consistency loss
+                    # Check whether unlabelled_X is valid, if not, skip consistency loss
+                    attempt_count = 0
+                    while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
+                        attempt_count += 1
+                        if attempt_count >= 100:
+                            break
+                        try:
+                            unlabelled_X = next(unlabelled_iterator)
+                        except StopIteration:
+                            unlabelled_iterator = iter(unlabelled_dataloader)
+                            unlabelled_X = next(unlabelled_iterator)
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         unlabelled_X = unlabelled_X.to(device)
