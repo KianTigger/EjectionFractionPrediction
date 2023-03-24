@@ -236,15 +236,15 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
     unlabelled_iterator = iter(unlabelled_dataloader)
 
-    count = 0
-
     with torch.set_grad_enabled(train):
-        #TODO check this doesn't stop 1 epoch short
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            for (X, outcome) in dataloader:
-                count += 1
-                if count < 115:
+            
+            for i, (X, outcome) in enumerate(dataloader):
+
+                if i < 255:
+                    pbar.update(1)  # Update progress bar for each iteration
                     continue
+
                 y.append(outcome.numpy())
                 X = X.to(device)
                 outcome = outcome.to(device)
@@ -284,7 +284,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
                     #Check whether unlabelled_X is valid, if not, skip consistency loss
 
-                    if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0:
+                    if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         unlabelled_X = unlabelled_X.to(device)
 
                         # Compute consistency loss between labelled and unlabelled data

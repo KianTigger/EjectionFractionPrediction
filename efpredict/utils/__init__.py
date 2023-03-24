@@ -29,12 +29,19 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         FileNotFoundError: Could not find `filename`
         ValueError: An error occurred while reading the video
     """
+    # if filename contains 0XB826FD24E4CBCD31,
+    if "0XB826FD24E4CBCD31" in filename:
+        print("Loading video: %s" % filename)
 
     if not os.path.exists(filename):
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)
+    if "0XB826FD24E4CBCD31" in filename:
+        print("capture loaded: %s" % capture)
 
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+    if "0XB826FD24E4CBCD31" in filename:
+        print("frame_count: %s" % frame_count)
 
     v = []
 
@@ -46,6 +53,10 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, target_size)
         v.append(frame)
+
+    # check if video can be stacked
+    if len(v) == 0:
+        raise ValueError("Could not read video %s" % filename)
 
     v = np.stack(v).transpose((3, 0, 1, 2))
 
