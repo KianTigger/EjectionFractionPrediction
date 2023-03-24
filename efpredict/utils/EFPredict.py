@@ -36,6 +36,8 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--period", type=int, default=2)
 @click.option("--num_train_patients", type=int, default=None)
 @click.option("--run_test", default=False, is_flag=True)
+@click.option("--labelled_ratio", type=int, default=10)
+@click.option("--unlabelled_ratio", type=int, default=1)
 
 def run(
     data_dir=None,
@@ -51,6 +53,9 @@ def run(
     # The current behavior is equivalent to passing `weights=R2Plus1D_18_Weights.KINETICS400_V1`. 
     # You can also use `weights=R2Plus1D_18_Weights.DEFAULT` to get the most up-to-date weights.
     weights=None,
+
+    labelled_ratio=10,
+    unlabelled_ratio=1,
 
     run_test=False,
     num_epochs=45,
@@ -89,14 +94,17 @@ def run(
                     torch.cuda.reset_peak_memory_stats(i)
 
                 ds = dataset[phase]
+
+                labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
+                unlabelled_batch_size = batch_size - labelled_batch_size
+
                 dataloader = torch.utils.data.DataLoader(
-                    ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+                    ds, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
                 unlabelled_dataloader = None
-                if phase == "train":
-
+                if phase == "train" and unlabelled_batch_size > 0:
                     unlabelled_dataloader = torch.utils.data.DataLoader(
-                        dataset["unlabelled"], batch_size=batch_size, num_workers=num_workers, shuffle=True, 
+                        dataset["unlabelled"], batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=custom_collate)
 
                 loss, yhat, y = run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
@@ -395,10 +403,7 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     return dataset
 
 def get_unlabelled_dataset(data_dir):
-    #TODO set up own unlabelled dataset, may need to change root
-    print("Loading unlabelled dataset")
     unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
-    print("unlabelled dataset: ", unlabelled_dataset )
     return unlabelled_dataset
 
 def plot_results(y, yhat, split, output):
