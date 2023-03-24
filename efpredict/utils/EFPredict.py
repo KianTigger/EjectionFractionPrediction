@@ -236,10 +236,15 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
     unlabelled_iterator = iter(unlabelled_dataloader)
 
+    count = 0
+
     with torch.set_grad_enabled(train):
         #TODO check this doesn't stop 1 epoch short
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for (X, outcome) in dataloader:
+                count += 1
+                if count < 115:
+                    continue
                 y.append(outcome.numpy())
                 X = X.to(device)
                 outcome = outcome.to(device)
@@ -287,10 +292,10 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         size_diff = outputs.size(0) - unlabelled_outputs.size(0)
                         # Pad the smaller tensor with zeros
                         if size_diff > 0:
-                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:])
+                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
                             unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
                         elif size_diff < 0:
-                            padding = torch.zeros(-size_diff, *outputs.size()[1:])
+                            padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
                             outputs = torch.cat((outputs, padding), dim=0)
                         consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
 
