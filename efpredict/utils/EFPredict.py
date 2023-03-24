@@ -278,7 +278,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
-                if train and unlabelled_dataloader is not None:
+                if train and (unlabelled_dataloader is not None):
                     # Sample a batch from the unlabelled dataset
                     try:
                         unlabelled_X = next(unlabelled_iterator)
@@ -316,11 +316,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         # Add consistency loss to the original loss
                         loss += consistency_loss
 
-                    optim.zero_grad()
-                    loss.backward()
-                    optim.step()
-
-                elif train:
+                if train:
                     optim.zero_grad()
                     loss.backward()
                     optim.step()
