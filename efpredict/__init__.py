@@ -24,6 +24,7 @@ del click
 
 
 main.add_command(utils.EFPredict.run)
+main.add_command(utils.EFPredictSupervised.run)
 # main.add_command(utils.EFPredictDPP.EFPredictDPP)
 # main.add_command(utils.EFPredictDPP.main) 
 
