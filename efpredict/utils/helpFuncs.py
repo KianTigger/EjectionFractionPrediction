@@ -13,6 +13,24 @@ import tqdm
 import efpredict
 
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R3D_18_Weights, mc3_18, MC3_18_Weights
+from torch.utils.data._utils.collate import default_collate
+
+def get_checkpoint(model, optim, scheduler, output, f):
+    epoch_resume = 0
+    bestLoss = float("inf")
+    try:
+        # Attempt to load checkpoint
+        checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
+        model.load_state_dict(checkpoint['state_dict'])
+        optim.load_state_dict(checkpoint['opt_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_dict'])
+        epoch_resume = checkpoint["epoch"] + 1
+        bestLoss = checkpoint["best_loss"]
+        f.write("Resuming from epoch {}\n".format(epoch_resume))
+    except FileNotFoundError:
+        f.write("Starting run from scratch\n")
+    
+    return model, optim, scheduler, epoch_resume, bestLoss
 
 def save_checkpoint(model, period, frames, epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
         #TODO change this to match original run.
@@ -99,23 +117,6 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
 
     return output, device, model, optim, scheduler
 
-def get_checkpoint(model, optim, scheduler, output, f):
-    epoch_resume = 0
-    bestLoss = float("inf")
-    try:
-        # Attempt to load checkpoint
-        checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
-        model.load_state_dict(checkpoint['state_dict'])
-        optim.load_state_dict(checkpoint['opt_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_dict'])
-        epoch_resume = checkpoint["epoch"] + 1
-        bestLoss = checkpoint["best_loss"]
-        f.write("Resuming from epoch {}\n".format(epoch_resume))
-    except FileNotFoundError:
-        f.write("Starting run from scratch\n")
-    
-    return model, optim, scheduler, epoch_resume, bestLoss
-
 def mean_and_std(data_dir, task, frames, period):
     # Compute mean and std
     mean, std = efpredict.utils.get_mean_and_std(efpredict.datasets.EchoDynamic(root=data_dir, split="train"))
@@ -131,6 +132,9 @@ def mean_and_std(data_dir, task, frames, period):
 def get_dataset(data_dir, num_train_patients, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
+
+    dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
+
     # TODO again replace efpredict with own file/functions.
     dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
     if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
@@ -141,7 +145,11 @@ def get_dataset(data_dir, num_train_patients, kwargs):
 
     return dataset
 
-def plot_results(y, yhat, split, output):
+def get_unlabelled_dataset(data_dir):
+    unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
+    return unlabelled_dataset
+
+def plot_results(y, yhat, split, output):  
         # Plot actual and predicted EF
         fig = plt.figure(figsize=(3, 3))
         lower = min(y.min(), yhat.min())
@@ -173,3 +181,12 @@ def plot_results(y, yhat, split, output):
         plt.tight_layout()
         plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
         plt.close(fig)
+
+def custom_collate(batch):
+    input_shape = (3, 112, 112)  # Assuming grayscale images with a single channel
+    output_shape = (1,)          # Assuming a single output value
+
+    batch = list(filter(lambda x: x is not None, batch))
+    if len(batch) == 0:
+        return torch.empty(0, *input_shape), torch.empty(0, *output_shape)
+    return default_collate(batch)
