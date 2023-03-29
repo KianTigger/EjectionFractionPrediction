@@ -15,7 +15,7 @@ import efpredict.utils.helpFuncs as helpFuncs
 # import pretrained r2plus1d_18 model from torchvision
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R3D_18_Weights, mc3_18, MC3_18_Weights
 
-@click.command("predict")
+@click.command("predictSupervised")
 @click.option("--data_dir", type=click.Path(exists=True, file_okay=False), default=None)
 @click.option("--output", type=click.Path(file_okay=False), default=None)
 @click.option("--model_name", type=click.Choice(
