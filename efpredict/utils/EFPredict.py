@@ -169,10 +169,10 @@ def generate_model(model_name, pretrained):
     # check that model_name is valid
     model_name = model_name.lower()
     assert model_name in ["r2plus1d_18", "mc3_18", "r3d_18"], "Model name must be one of r2plus1d_18, mc3_18, r3d_18"
-    
+    weights = None
     if not pretrained:
         model = torchvision.models.video.__dict__[
-            model_name](weights=None)
+            model_name](weights=weights)
     else:  
         #Set weights to default of whichever model is chosen
         weights = R2Plus1D_18_Weights.DEFAULT
@@ -183,7 +183,9 @@ def generate_model(model_name, pretrained):
 
         model = torchvision.models.video.__dict__[
             model_name](weights=weights)
-
+    print("Using model: ", model_name)
+    if weights is None:
+        print("Using random weights")
     return model
 
 def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
