@@ -6,6 +6,7 @@ import numpy as np
 import click
 import matplotlib.pyplot as plt
 import torch
+from torch.utils.data._utils.collate import default_collate
 import torchvision
 import sklearn.metrics
 import tqdm
@@ -35,6 +36,8 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--period", type=int, default=2)
 @click.option("--num_train_patients", type=int, default=None)
 @click.option("--run_test", default=False, is_flag=True)
+@click.option("--labelled_ratio", type=int, default=10)
+@click.option("--unlabelled_ratio", type=int, default=1)
 
 def run(
     data_dir=None,
@@ -50,6 +53,9 @@ def run(
     # The current behavior is equivalent to passing `weights=R2Plus1D_18_Weights.KINETICS400_V1`. 
     # You can also use `weights=R2Plus1D_18_Weights.DEFAULT` to get the most up-to-date weights.
     weights=None,
+
+    labelled_ratio=10,
+    unlabelled_ratio=1,
 
     run_test=False,
     num_epochs=45,
@@ -72,6 +78,8 @@ def run(
 
     dataset = get_dataset(data_dir, num_train_patients, kwargs)
 
+
+
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 
@@ -86,10 +94,20 @@ def run(
                     torch.cuda.reset_peak_memory_stats(i)
 
                 ds = dataset[phase]
-                dataloader = torch.utils.data.DataLoader(
-                    ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device)
+                labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
+                unlabelled_batch_size = batch_size - labelled_batch_size
+
+                dataloader = torch.utils.data.DataLoader(
+                    ds, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+
+                unlabelled_dataloader = None
+                if phase == "train" and unlabelled_batch_size > 0:
+                    unlabelled_dataloader = torch.utils.data.DataLoader(
+                        dataset["unlabelled"], batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
+                        pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=custom_collate)
+
+                loss, yhat, y = run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -114,6 +132,15 @@ def run(
 
         if run_test:
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
+
+def custom_collate(batch):
+    input_shape = (3, 112, 112)  # Assuming grayscale images with a single channel
+    output_shape = (1,)          # Assuming a single output value
+
+    batch = list(filter(lambda x: x is not None, batch))
+    if len(batch) == 0:
+        return torch.empty(0, *input_shape), torch.empty(0, *output_shape)
+    return default_collate(batch)
 
 def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
     # Seed RNGs
@@ -186,7 +213,7 @@ def generate_model(model_name, pretrained):
 
     return model
 
-def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
+def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:
@@ -215,12 +242,13 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     yhat = []
     y = []
 
-    print("dataloder: ", dataloader)
+    if unlabelled_dataloader is not None:
+        unlabelled_iterator = iter(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
-        #TODO check this doesn't stop 1 epoch short
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for (X, outcome) in dataloader:
+
                 y.append(outcome.numpy())
                 X = X.to(device)
                 outcome = outcome.to(device)
@@ -249,6 +277,44 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
+
+                if train and (unlabelled_dataloader is not None):
+                    # Sample a batch from the unlabelled dataset
+                    try:
+                        unlabelled_X = next(unlabelled_iterator)
+                    except StopIteration:
+                        unlabelled_iterator = iter(unlabelled_dataloader)
+                        unlabelled_X = next(unlabelled_iterator)
+
+                    # Check whether unlabelled_X is valid, if not, skip consistency loss
+                    attempt_count = 0
+                    while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
+                        attempt_count += 1
+                        if attempt_count >= 100:
+                            break
+                        try:
+                            unlabelled_X = next(unlabelled_iterator)
+                        except StopIteration:
+                            unlabelled_iterator = iter(unlabelled_dataloader)
+                            unlabelled_X = next(unlabelled_iterator)
+
+                    if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
+                        unlabelled_X = unlabelled_X.to(device)
+
+                        # Compute consistency loss between labelled and unlabelled data
+                        unlabelled_outputs = model(unlabelled_X)
+                        size_diff = outputs.size(0) - unlabelled_outputs.size(0)
+                        # Pad the smaller tensor with zeros
+                        if size_diff > 0:
+                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
+                            unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
+                        elif size_diff < 0:
+                            padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
+                            outputs = torch.cat((outputs, padding), dim=0)
+                        consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+
+                        # Add consistency loss to the original loss
+                        loss += consistency_loss
 
                 if train:
                     optim.zero_grad()
@@ -319,6 +385,9 @@ def mean_and_std(data_dir, task, frames, period):
 def get_dataset(data_dir, num_train_patients, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
+
+    dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
+
     # TODO again replace efpredict with own file/functions.
     dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
     if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
@@ -328,6 +397,10 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
 
     return dataset
+
+def get_unlabelled_dataset(data_dir):
+    unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
+    return unlabelled_dataset
 
 def plot_results(y, yhat, split, output):
         # Plot actual and predicted EF
