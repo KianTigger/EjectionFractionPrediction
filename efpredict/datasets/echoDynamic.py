@@ -366,7 +366,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 factor = clip.shape[1] // clip_length
 
                 # Compute the number of frames to keep after downsampling
-                num_frames = factor * clip_length
+                # num_frames = factor * clip_length
 
                 # TODO using num_frames sometimes results in a clip that is too long, fix or just use clip_length
                 # Downsample the clip and keep only the first num_frames frames
