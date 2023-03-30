@@ -175,11 +175,12 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
         print("Creating unlabelled iterator")
         unlabelled_iterator = iter(unlabelled_dataloader)
         print("Created unlabelled iterator in {} seconds".format(time.time() - tempTime))
-
+    
+    tempTime = time.time()
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for (X, outcome) in dataloader:
-                print("loaded data")
+                print("loaded data in {} seconds".format(time.time() - tempTime))
 
                 y.append(outcome.numpy())
                 X = X.to(device)
@@ -280,11 +281,16 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     optim.step()
                     print("Optimized in {} seconds".format(time.time() - tempTime)) 
 
+                tempTime = time.time()
+                print("Updating progress bar")
                 total += loss.item() * X.size(0)
                 n += X.size(0)
+                print("Updated progress bar in {} seconds".format(time.time() - tempTime))
 
                 pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
                 pbar.update()
+
+                tempTime = time.time()
 
     if not save_all:
         yhat = np.concatenate(yhat)
