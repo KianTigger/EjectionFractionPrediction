@@ -92,21 +92,26 @@ def run(
                     torch.cuda.reset_peak_memory_stats(i)
 
                 ds = dataset[phase]
+                tempTime = time.time()
                 print("Creating labelled and unlabelled batch sizes")
                 labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
                 unlabelled_batch_size = batch_size - labelled_batch_size
+                print("created labelled and unlabelled batch sizes in {} seconds".format(time.time() - tempTime))
 
+                tempTime = time.time()
                 print("Creating dataloader")
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
-                
+                print("Created dataloader in {} seconds".format(time.time() - tempTime))
 
                 unlabelled_dataloader = None
                 if phase == "train" and unlabelled_batch_size > 0:
+                    tempTime = time.time()
                     print("Creating unlabelled dataloader")
                     unlabelled_dataloader = torch.utils.data.DataLoader(
                         dataset["unlabelled"], batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
+                    print("Created unlabelled dataloader in {} seconds".format(time.time() - tempTime))
 
                 print("Running epoch")
                 loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
@@ -122,7 +127,7 @@ def run(
                 f.flush()
 
             scheduler.step()
-
+            
             bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
 
         # Load best weights
@@ -166,8 +171,10 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     y = []
 
     if unlabelled_dataloader is not None:
+        tempTime = time.time()
         print("Creating unlabelled iterator")
         unlabelled_iterator = iter(unlabelled_dataloader)
+        print("Created unlabelled iterator in {} seconds".format(time.time() - tempTime))
 
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
@@ -200,11 +207,13 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 if not save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
+                tempTime = time.time()
                 print("Calculating loss")
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
-                print("Loss calculated")
+                print("Calculated loss in {} seconds".format(time.time() - tempTime))
 
                 if train and (unlabelled_dataloader is not None):
+                    tempTime = time.time()
                     print("Getting unlabelled data")
                     # Sample a batch from the unlabelled dataset
                     try:
@@ -212,10 +221,12 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X = next(unlabelled_iterator)
+                    print("Got unlabelled data in {} seconds".format(time.time() - tempTime))
 
-                    print("Checking unlabelled data")
                     # Check whether unlabelled_X is valid, if not, skip consistency loss
                     while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
+                        #TODO see if this is needed
+                        print("Checking unlabelled data")
                         try:
                             print("trying to get next unlabelled data")
                             unlabelled_X = next(unlabelled_iterator)
@@ -227,11 +238,15 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         print("Got unlabelled data")
                         unlabelled_X = unlabelled_X.to(device)
+                        tempTime = time.time()
                         print("Computing consistency loss size diff")
                         # Compute consistency loss between labelled and unlabelled data
                         unlabelled_outputs = model(unlabelled_X)
                         size_diff = outputs.size(0) - unlabelled_outputs.size(0)
-                        print("computed consistency loss size diff")
+                        print("Computed consistency loss size diff in {} seconds".format(time.time() - tempTime))
+
+                        tempTime = time.time()
+                        print("Padding tensors")
                         # Pad the smaller tensor with zeros
                         if size_diff > 0:
                             padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
@@ -239,21 +254,31 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         elif size_diff < 0:
                             padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
                             outputs = torch.cat((outputs, padding), dim=0)
+                        print("Padded tensors in {} seconds".format(time.time() - tempTime))
                         
+                        tempTime = time.time()
                         print("computing consistency loss")
                         consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-                        print("computed consistency loss")
+                        print("Computed consistency loss in {} seconds".format(time.time() - tempTime))
+
                         # Add consistency loss to the original loss
                         loss += consistency_loss
 
                 if train:
+                    tempTime = time.time()
                     print("Backpropagating")
                     optim.zero_grad()
-                    print("Backpropagated")
+                    print("Backpropagated in {} seconds".format(time.time() - tempTime))
+
+                    tempTime = time.time()
+                    print("Computing gradients")
                     loss.backward()
+                    print("Computed gradients in {} seconds".format(time.time() - tempTime))
+
+                    tempTime = time.time()
                     print("Optimizing")
                     optim.step()
-                    print("Optimized")
+                    print("Optimized in {} seconds".format(time.time() - tempTime)) 
 
                 total += loss.item() * X.size(0)
                 n += X.size(0)
