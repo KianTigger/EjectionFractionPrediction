@@ -71,7 +71,7 @@ def run(
 ):
     # TODO Write docstrings, and explanations for args
 
-    output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs)
+    output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
 
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
 
@@ -85,7 +85,6 @@ def run(
         model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
 
         for epoch in range(epoch_resume, num_epochs):
-            #TODO make this epoch + 1
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
                 start_time = time.time()
@@ -93,20 +92,24 @@ def run(
                     torch.cuda.reset_peak_memory_stats(i)
 
                 ds = dataset[phase]
-
+                print("Creating labelled and unlabelled batch sizes")
                 labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
                 unlabelled_batch_size = batch_size - labelled_batch_size
 
+                print("Creating dataloader")
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+                
 
                 unlabelled_dataloader = None
                 if phase == "train" and unlabelled_batch_size > 0:
+                    print("Creating unlabelled dataloader")
                     unlabelled_dataloader = torch.utils.data.DataLoader(
                         dataset["unlabelled"], batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
 
-                loss, yhat, y = run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
+                print("Running epoch")
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -131,7 +134,6 @@ def run(
 
         if run_test:
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
-
 
 
 def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None):
@@ -164,6 +166,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     y = []
 
     if unlabelled_dataloader is not None:
+        print("Creating unlabelled iterator")
         unlabelled_iterator = iter(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
@@ -182,7 +185,6 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
 
-                #TODO make it create clips around generated systole and diastole frames.
                 if block_size is None:
                     outputs = model(X)
                 else:
@@ -200,6 +202,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
                 if train and (unlabelled_dataloader is not None):
+                    print("Getting unlabelled data")
                     # Sample a batch from the unlabelled dataset
                     try:
                         unlabelled_X = next(unlabelled_iterator)
@@ -207,24 +210,25 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X = next(unlabelled_iterator)
 
+                    print("Checking unlabelled data")
                     # Check whether unlabelled_X is valid, if not, skip consistency loss
-                    attempt_count = 0
                     while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
-                        attempt_count += 1
-                        if attempt_count >= 100:
-                            break
                         try:
+                            print("trying to get next unlabelled data")
                             unlabelled_X = next(unlabelled_iterator)
                         except StopIteration:
+                            print("restarting unlabelled iterator!!!!!!!!!!!!!!")
                             unlabelled_iterator = iter(unlabelled_dataloader)
                             unlabelled_X = next(unlabelled_iterator)
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
+                        print("Got unlabelled data")
                         unlabelled_X = unlabelled_X.to(device)
-
+                        print("Computing consistency loss size diff")
                         # Compute consistency loss between labelled and unlabelled data
                         unlabelled_outputs = model(unlabelled_X)
                         size_diff = outputs.size(0) - unlabelled_outputs.size(0)
+                        print("computed consistency loss size diff")
                         # Pad the smaller tensor with zeros
                         if size_diff > 0:
                             padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
@@ -232,8 +236,10 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         elif size_diff < 0:
                             padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
                             outputs = torch.cat((outputs, padding), dim=0)
+                        
+                        print("computing consistency loss")
                         consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-
+                        print("computed consistency loss")
                         # Add consistency loss to the original loss
                         loss += consistency_loss
 
