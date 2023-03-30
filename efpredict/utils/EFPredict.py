@@ -172,6 +172,7 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for (X, outcome) in dataloader:
+                print("loaded data")
 
                 y.append(outcome.numpy())
                 X = X.to(device)
@@ -199,7 +200,9 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 if not save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
+                print("Calculating loss")
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
+                print("Loss calculated")
 
                 if train and (unlabelled_dataloader is not None):
                     print("Getting unlabelled data")
@@ -244,9 +247,13 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         loss += consistency_loss
 
                 if train:
+                    print("Backpropagating")
                     optim.zero_grad()
+                    print("Backpropagated")
                     loss.backward()
+                    print("Optimizing")
                     optim.step()
+                    print("Optimized")
 
                 total += loss.item() * X.size(0)
                 n += X.size(0)
