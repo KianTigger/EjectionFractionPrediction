@@ -96,6 +96,10 @@ def run(
                                
                 labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
                 unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
+                # make these only the first 10% of the dataset
+                labelled_dataset = LabelledDataset(labelled_data=dataset[phase][:int(len(dataset[phase]) * 0.1)])
+                unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"][:int(len(dataset["unlabelled"]) * 0.1)])
+                
                 tempTime = time.time()
                 print("Creating labelled and unlabelled batch sizes")                
                 labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
