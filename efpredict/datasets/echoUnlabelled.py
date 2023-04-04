@@ -62,13 +62,10 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
                 return False
             cap.release()
 
-            # Check if the MJPEG file is readable using PIL
-            im = Image.open(file_path)
-            im.verify()
-
         except Exception as e:
             print(f"Error while reading file {file_path}: {e}")
             return False
+
         return True
 
     def get_unlabelled_data(self):
