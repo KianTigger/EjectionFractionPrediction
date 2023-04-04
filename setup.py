@@ -29,7 +29,8 @@ setuptools.setup(
         "opencv-python",
         "scikit-image",
         "tqdm",
-        "sklearn"
+        "sklearn",
+        "cv2",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -97,28 +97,18 @@ def run(
                 labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
                 unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
                 
-                tempTime = time.time()
-                print("Creating labelled and unlabelled batch sizes")                
                 labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
                 unlabelled_batch_size = batch_size - labelled_batch_size
-                print("created labelled and unlabelled batch sizes in {} seconds".format(time.time() - tempTime))
 
-                tempTime = time.time()
-                print("Creating dataloader")
                 labelled_dataloader = DataLoader(
                     labelled_dataset, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
-                print("Created dataloader in {} seconds".format(time.time() - tempTime))
                 
                 unlabelled_dataloader = None
                 if phase == "train" and unlabelled_batch_size > 0:
-                    tempTime = time.time()
-                    print("Creating unlabelled dataloader")
                     unlabelled_dataloader = DataLoader(
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
-                    print("Created unlabelled dataloader in {} seconds".format(time.time() - tempTime))
 
-                print("Running epoch")
                 loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
@@ -201,7 +191,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(labelled_dataloader)) as pbar:
             for (X, outcome) in labelled_dataloader:
-                print("loaded data in {} seconds".format(time.time() - tempTime))
+                # print("loaded data in {} seconds".format(time.time() - tempTime))
                 TEMP_total_data_load_time += time.time() - tempTime
 
                 y.append(outcome.numpy())
@@ -227,21 +217,20 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                     outputs = outputs.view(batch, n_clips, -1).mean(1)
 
                 tempTime = time.time()
-                print("Calculating loss")
+                # print("Calculating loss")
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
-                print("Calculated loss in {} seconds".format(time.time() - tempTime))
+                # print("Calculated loss in {} seconds".format(time.time() - tempTime))
                 TEMP_total_calculate_loss_time += time.time() - tempTime
 
                 if train and (unlabelled_dataloader is not None):
                     tempTime = time.time()
-                    print("Getting unlabelled data")
                     # Sample a batch from the unlabelled dataset
                     try:
                         unlabelled_X, _ = next(unlabelled_iterator)
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X, _ = next(unlabelled_iterator)
-                    print("Got unlabelled data in {} seconds".format(time.time() - tempTime))
+                    # print("Got unlabelled data in {} seconds".format(time.time() - tempTime))
                     TEMP_total_get_unlabelled_time += time.time() - tempTime
 
                     # Check whether unlabelled_X is valid, if not, skip consistency loss
@@ -257,18 +246,17 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                     #         unlabelled_X, _ = next(unlabelled_iterator)
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
-                        print("Got unlabelled data")
                         unlabelled_X = unlabelled_X.to(device)
                         tempTime = time.time()
-                        print("Computing consistency loss size diff")
+                        # print("Computing consistency loss size diff")
                         # Compute consistency loss between labelled and unlabelled data
                         unlabelled_outputs = model(unlabelled_X)
                         size_diff = outputs.size(0) - unlabelled_outputs.size(0)
-                        print("Computed consistency loss size diff in {} seconds".format(time.time() - tempTime))
+                        # print("Computed consistency loss size diff in {} seconds".format(time.time() - tempTime))
                         TEMP_total_computed_consistency_loss_time += time.time() - tempTime
 
                         tempTime = time.time()
-                        print("Padding tensors")
+                        # print("Padding tensors")
                         # Pad the smaller tensor with zeros
                         if size_diff > 0:
                             padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
@@ -276,13 +264,13 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                         elif size_diff < 0:
                             padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
                             outputs = torch.cat((outputs, padding), dim=0)
-                        print("Padded tensors in {} seconds".format(time.time() - tempTime))
+                        # print("Padded tensors in {} seconds".format(time.time() - tempTime))
                         TEMP_total_padded_tensor_time += time.time() - tempTime
 
                         tempTime = time.time()
-                        print("computing consistency loss")
+                        # print("computing consistency loss")
                         consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-                        print("Computed consistency loss in {} seconds".format(time.time() - tempTime))
+                        # print("Computed consistency loss in {} seconds".format(time.time() - tempTime))
                         TEMP_total_consistency_loss_time += time.time() - tempTime
 
                         # Add consistency loss to the original loss
@@ -290,50 +278,52 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
 
                 if train:
                     tempTime = time.time()
-                    print("Backpropagating")
+                    # print("Backpropagating")
                     optim.zero_grad()
-                    print("Backpropagated in {} seconds".format(time.time() - tempTime))
+                    # print("Backpropagated in {} seconds".format(time.time() - tempTime))
                     TEMP_total_backprop_time += time.time() - tempTime
 
                     tempTime = time.time()
-                    print("Computing gradients")
+                    # print("Computing gradients")
                     loss.backward()
-                    print("Computed gradients in {} seconds".format(time.time() - tempTime))
+                    # print("Computed gradients in {} seconds".format(time.time() - tempTime))
                     TEMP_total_computing_gradient_time += time.time() - tempTime
 
                     tempTime = time.time()
-                    print("Optimizing")
+                    # print("Optimizing")
                     optim.step()
-                    print("Optimized in {} seconds".format(time.time() - tempTime)) 
+                    # print("Optimized in {} seconds".format(time.time() - tempTime)) 
                     TEMP_total_optim_step_time += time.time() - tempTime
 
                 tempTime = time.time()
-                print("Updating total and n loss")
+                # print("Updating total and n loss")
                 total += loss.item() * X.size(0)
                 n += X.size(0)
-                print("Updated total and n in {} seconds".format(time.time() - tempTime))
+                # print("Updated total and n in {} seconds".format(time.time() - tempTime))
                 TEMP_total_total_and_n_time += time.time() - tempTime
 
                 tempTime = time.time()
                 pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
                 pbar.update()
-                print("Updated progress bar in {} seconds".format(time.time() - tempTime))
+                # print("Updated progress bar in {} seconds".format(time.time() - tempTime))
                 TEMP_total_update_progress_bar_time += time.time() - tempTime
 
                 tempTime = time.time()
 
-                print("Printing all times")
-                print("Total time to get labelled data: {}".format(TEMP_total_data_load_time))
-                print("Total time to calculate loss: {}".format(TEMP_total_calculate_loss_time))
-                print("Total time to get unlabelled data: {}".format(TEMP_total_get_unlabelled_time))
-                print("Total time to compute consistency loss: {}".format(TEMP_total_computed_consistency_loss_time))
-                print("Total time to pad tensors: {}".format(TEMP_total_padded_tensor_time))
-                print("Total time to compute consistency loss: {}".format(TEMP_total_consistency_loss_time))
-                print("Total time to backpropagate: {}".format(TEMP_total_backprop_time))
-                print("Total time to compute gradients: {}".format(TEMP_total_computing_gradient_time))
-                print("Total time to optimize: {}".format(TEMP_total_optim_step_time))
-                print("Total time to update total and n: {}".format(TEMP_total_total_and_n_time))
-                print("Total time to update progress bar: {}".format(TEMP_total_update_progress_bar_time))
+                print_all = False
+                if print_all:
+                    print("Printing all times")
+                    print("Total time to get labelled data: {}".format(TEMP_total_data_load_time))
+                    print("Total time to calculate loss: {}".format(TEMP_total_calculate_loss_time))
+                    print("Total time to get unlabelled data: {}".format(TEMP_total_get_unlabelled_time))
+                    print("Total time to compute consistency loss: {}".format(TEMP_total_computed_consistency_loss_time))
+                    print("Total time to pad tensors: {}".format(TEMP_total_padded_tensor_time))
+                    print("Total time to compute consistency loss: {}".format(TEMP_total_consistency_loss_time))
+                    print("Total time to backpropagate: {}".format(TEMP_total_backprop_time))
+                    print("Total time to compute gradients: {}".format(TEMP_total_computing_gradient_time))
+                    print("Total time to optimize: {}".format(TEMP_total_optim_step_time))
+                    print("Total time to update total and n: {}".format(TEMP_total_total_and_n_time))
+                    print("Total time to update progress bar: {}".format(TEMP_total_update_progress_bar_time))
                 
 
     if not save_all:

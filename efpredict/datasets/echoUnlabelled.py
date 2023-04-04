@@ -10,7 +10,7 @@ import collections
 import pandas as pd
 
 import numpy as np
-import skimage.draw
+import cv2
 import torchvision
 import efpredict
 
@@ -52,6 +52,18 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
         else:
             self.get_unlabelled_data()
 
+    def is_valid_mjpeg(self, file_path):
+        try:
+            cap = cv2.VideoCapture(file_path)
+            ret, frame = cap.read()
+            if not ret:
+                return False
+            cap.release()
+        except Exception as e:
+            print(f"Error while reading file {file_path}: {e}")
+            return False
+        return True
+
     def get_unlabelled_data(self):
         # Load data
         data = pd.read_csv(os.path.join(self.root, "MeasurementsList.csv"))
@@ -62,7 +74,16 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
 
         data = self.update_batch_paths(data)
 
-        self.fnames = list(data)
+        # Filter out invalid MJPEG files
+        valid_fnames = []
+        for fname in data:
+            file_path = os.path.join(self.root, fname)  # Replace this with the correct path to the video file
+            if self.is_valid_mjpeg(file_path):
+                valid_fnames.append(fname)
+            else:
+                print(f"Discarding invalid file: {fname}")
+
+        self.fnames = valid_fnames
 
     def update_batch_paths(self, data):
         # Find existing batch folders
