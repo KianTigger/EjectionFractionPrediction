@@ -311,20 +311,20 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
 
                 tempTime = time.time()
 
-                print_all = False
-                if print_all:
-                    print("Printing all times")
-                    print("Total time to get labelled data: {}".format(TEMP_total_data_load_time))
-                    print("Total time to calculate loss: {}".format(TEMP_total_calculate_loss_time))
-                    print("Total time to get unlabelled data: {}".format(TEMP_total_get_unlabelled_time))
-                    print("Total time to compute consistency loss: {}".format(TEMP_total_computed_consistency_loss_time))
-                    print("Total time to pad tensors: {}".format(TEMP_total_padded_tensor_time))
-                    print("Total time to compute consistency loss: {}".format(TEMP_total_consistency_loss_time))
-                    print("Total time to backpropagate: {}".format(TEMP_total_backprop_time))
-                    print("Total time to compute gradients: {}".format(TEMP_total_computing_gradient_time))
-                    print("Total time to optimize: {}".format(TEMP_total_optim_step_time))
-                    print("Total time to update total and n: {}".format(TEMP_total_total_and_n_time))
-                    print("Total time to update progress bar: {}".format(TEMP_total_update_progress_bar_time))
+    print_all = False
+    if print_all:
+        print("Printing all times")
+        print("Total time to get labelled data: {}".format(TEMP_total_data_load_time))
+        print("Total time to calculate loss: {}".format(TEMP_total_calculate_loss_time))
+        print("Total time to get unlabelled data: {}".format(TEMP_total_get_unlabelled_time))
+        print("Total time to compute consistency loss: {}".format(TEMP_total_computed_consistency_loss_time))
+        print("Total time to pad tensors: {}".format(TEMP_total_padded_tensor_time))
+        print("Total time to compute consistency loss: {}".format(TEMP_total_consistency_loss_time))
+        print("Total time to backpropagate: {}".format(TEMP_total_backprop_time))
+        print("Total time to compute gradients: {}".format(TEMP_total_computing_gradient_time))
+        print("Total time to optimize: {}".format(TEMP_total_optim_step_time))
+        print("Total time to update total and n: {}".format(TEMP_total_total_and_n_time))
+        print("Total time to update progress bar: {}".format(TEMP_total_update_progress_bar_time))
                 
 
     if not save_all:

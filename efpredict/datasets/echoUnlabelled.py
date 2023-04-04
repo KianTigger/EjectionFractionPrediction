@@ -81,12 +81,11 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
         # Filter out invalid MJPEG files
         valid_fnames = []
         for fname in data:
-            print(f"Checking file: {fname}")
             file_path = os.path.join(self.root, fname)  # Replace this with the correct path to the video file
             if self.is_valid_mjpeg(file_path):
                 valid_fnames.append(fname)
             else:
-                print(f"Discarding invalid file!!!!!!!!!!!!!!!!!!!!!!!!!: {fname}")
+                print(f"Discarding invalid file: {fname}")
 
         self.fnames = valid_fnames
 
