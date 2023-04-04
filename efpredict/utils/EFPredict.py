@@ -311,7 +311,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
 
                 tempTime = time.time()
 
-    print_all = False
+    print_all = True
     if print_all:
         print("Printing all times")
         print("Total time to get labelled data: {}".format(TEMP_total_data_load_time))
