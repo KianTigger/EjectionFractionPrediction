@@ -179,7 +179,9 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
     # unlabelled_iterator = iter(unlabelled_dataloader)
         
     labelled_iterator = itertools.cycle(labelled_dataloader)
-    unlabelled_iterator = itertools.cycle(unlabelled_dataloader)
+    unlabelled_iterator = None
+    if unlabelled_dataloader is not None:
+        unlabelled_iterator = itertools.cycle(unlabelled_dataloader)
 
 
     TEMP_total_data_load_time = 0
