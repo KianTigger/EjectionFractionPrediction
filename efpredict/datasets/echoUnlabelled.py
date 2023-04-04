@@ -13,6 +13,7 @@ import numpy as np
 import cv2
 import torchvision
 import efpredict
+import subprocess
 
 class EchoUnlabelled(torchvision.datasets.VisionDataset):
     def __init__(self, root=None,
@@ -52,8 +53,16 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
         else:
             self.get_unlabelled_data()
 
-    def is_valid_mjpeg(self, file_path):
+    def is_valid_mjpeg(file_path):
         try:
+            # Check for overread errors using FFmpeg
+            ffprobe_cmd = f"ffprobe -v error -i {file_path} -f null -"
+            result = subprocess.run(ffprobe_cmd, shell=True, stderr=subprocess.PIPE, text=True)
+            if "overread" in result.stderr:
+                print(f"Discarding file with overread error: {file_path}")
+                return False
+
+            # Check if MJPEG file can be read by OpenCV
             cap = cv2.VideoCapture(file_path)
             ret, frame = cap.read()
             if not ret:
