@@ -74,7 +74,7 @@ def generate_model(model_name, pretrained):
         print("Using random weights")
     return model
 
-def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs):
+def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio=False, unlabelled_ratio=False):
     # Seed RNGs
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -83,8 +83,11 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
     # Set default output directory
     if output is None:
         pretrained_str = "pretrained" if pretrained else "random"
-        output_dir = f"output/{pretrained_str}-num_epochs-{num_epochs}"
-        output = os.path.join(output_dir, "video", f"{model_name}_{frames}_{period}_{pretrained_str}")
+        output_dir = f"output/{pretrained_str}/epochs-{num_epochs}/"
+        if labelled_ratio != False and unlabelled_ratio != False:
+            output_dir += f"ratioLU-{labelled_ratio}-{unlabelled_ratio}/"
+        output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
+
     os.makedirs(output, exist_ok=True)
 
     # Set device for computations
@@ -183,6 +186,7 @@ def plot_results(y, yhat, split, output):
         plt.close(fig)
 
 def custom_collate(batch):
+    #TODO make sure this is preprocessing the data correctly.
     input_shape = (3, 112, 112)  # Assuming grayscale images with a single channel
     output_shape = (1,)          # Assuming a single output value
 
