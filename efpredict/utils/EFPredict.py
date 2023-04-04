@@ -94,9 +94,8 @@ def run(
                 for i in range(torch.cuda.device_count()):
                     torch.cuda.reset_peak_memory_stats(i)
                                
-                labelled_dataset = LabelledDataset(labelled_data=dataset[phase][:100])
-                unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"][:100])
-                # make these only the first 10% of the dataset
+                labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
+                unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
                 
                 tempTime = time.time()
                 print("Creating labelled and unlabelled batch sizes")                
