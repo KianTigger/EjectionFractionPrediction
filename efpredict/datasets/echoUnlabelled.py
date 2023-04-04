@@ -53,7 +53,7 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
         else:
             self.get_unlabelled_data()
 
-    def is_valid_mjpeg(file_path):
+    def is_valid_mjpeg(self, file_path):
         try:
             # Check for overread errors using FFmpeg
             ffprobe_cmd = f"ffprobe -v error -i {file_path} -f null -"
