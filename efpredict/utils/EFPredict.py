@@ -179,7 +179,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
     # if unlabelled_dataloader is not None:
     # unlabelled_iterator = iter(unlabelled_dataloader)
         
-    labelled_iterator = itertools.cycle(labelled_dataloader)
+    # labelled_iterator = itertools.cycle(labelled_dataloader)
     unlabelled_iterator = None
     if unlabelled_dataloader is not None:
         unlabelled_iterator = itertools.cycle(unlabelled_dataloader)
@@ -200,7 +200,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
     tempTime = time.time()
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(labelled_dataloader)) as pbar:
-            for (X, outcome) in labelled_iterator:
+            for (X, outcome) in labelled_dataloader:
                 print("loaded data in {} seconds".format(time.time() - tempTime))
                 TEMP_total_data_load_time += time.time() - tempTime
 
