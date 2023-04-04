@@ -245,16 +245,16 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                     TEMP_total_get_unlabelled_time += time.time() - tempTime
 
                     # Check whether unlabelled_X is valid, if not, skip consistency loss
-                    while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
-                        #TODO see if this is needed
-                        print("Checking unlabelled data")
-                        try:
-                            print("trying to get next unlabelled data")
-                            unlabelled_X, _ = next(unlabelled_iterator)
-                        except StopIteration:
-                            print("restarting unlabelled iterator!!!!!!!!!!!!!!")
-                            unlabelled_iterator = iter(unlabelled_dataloader)
-                            unlabelled_X, _ = next(unlabelled_iterator)
+                    # while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
+                    #     #TODO see if this is needed
+                    #     print("Checking unlabelled data")
+                    #     try:
+                    #         print("trying to get next unlabelled data")
+                    #         unlabelled_X, _ = next(unlabelled_iterator)
+                    #     except StopIteration:
+                    #         print("restarting unlabelled iterator!!!!!!!!!!!!!!")
+                    #         unlabelled_iterator = iter(unlabelled_dataloader)
+                    #         unlabelled_X, _ = next(unlabelled_iterator)
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         print("Got unlabelled data")
