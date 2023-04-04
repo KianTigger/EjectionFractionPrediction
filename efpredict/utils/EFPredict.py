@@ -8,9 +8,12 @@ import torch
 import torchvision
 import sklearn.metrics
 import tqdm
+import itertools
 
 import efpredict
 import efpredict.utils.helpFuncs as helpFuncs
+from efpredict.datasets.datasets import LabelledDataset, UnlabelledDataset
+from torch.utils.data import DataLoader
 
 # import pretrained r2plus1d_18 model from torchvision
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R3D_18_Weights, mc3_18, MC3_18_Weights
@@ -84,29 +87,29 @@ def run(
 
         model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
 
-        for epoch in range(epoch_resume, num_epochs):
-            #TODO make this epoch + 1
+        for epoch in range(epoch_resume + 1, num_epochs + 1):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
                 start_time = time.time()
                 for i in range(torch.cuda.device_count()):
                     torch.cuda.reset_peak_memory_stats(i)
-
-                ds = dataset[phase]
-
+                               
+                labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
+                unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
+                
                 labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
                 unlabelled_batch_size = batch_size - labelled_batch_size
 
-                dataloader = torch.utils.data.DataLoader(
-                    ds, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+                labelled_dataloader = DataLoader(
+                    labelled_dataset, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
                 unlabelled_dataloader = None
                 if phase == "train" and unlabelled_batch_size > 0:
-                    unlabelled_dataloader = torch.utils.data.DataLoader(
-                        dataset["unlabelled"], batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
+                    unlabelled_dataloader = DataLoader(
+                        unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
 
-                loss, yhat, y = run_epoch(model, dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
+                loss, yhat, y = run_epoch(model, labelled_dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -134,12 +137,12 @@ def run(
 
 
 
-def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None):
+def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:
         model (torch.nn.Module): Model to train/evaulate.
-        dataloder (torch.utils.data.DataLoader): Dataloader for dataset.
+        dataloder (DataLoader): Dataloader for dataset.
         train (bool): Whether or not to train model.
         optim (torch.optim.Optimizer): Optimizer
         device (torch.device): Device to run on
@@ -163,12 +166,15 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     yhat = []
     y = []
 
-    if unlabelled_dataloader is not None:
-        unlabelled_iterator = iter(unlabelled_dataloader)
+    # if unlabelled_dataloader is not None:
+    #     unlabelled_iterator = iter(unlabelled_dataloader)
+    
+    labelled_iterator = itertools.cycle(labelled_dataloader)
+    unlabelled_iterator = itertools.cycle(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
-        with tqdm.tqdm(total=len(dataloader)) as pbar:
-            for (X, outcome) in dataloader:
+        with tqdm.tqdm(total=len(labelled_dataloader)) as pbar:
+            for (X, outcome) in labelled_iterator:
 
                 y.append(outcome.numpy())
                 X = X.to(device)
@@ -188,24 +194,20 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                 else:
                     outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
 
-                if save_all:
-                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
+                yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
                 if average:
                     outputs = outputs.view(batch, n_clips, -1).mean(1)
-
-                if not save_all:
-                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
                 if train and (unlabelled_dataloader is not None):
                     # Sample a batch from the unlabelled dataset
                     try:
-                        unlabelled_X = next(unlabelled_iterator)
+                        unlabelled_X, _ = next(unlabelled_iterator)
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
-                        unlabelled_X = next(unlabelled_iterator)
+                        unlabelled_X, _ = next(unlabelled_iterator)
 
                     # Check whether unlabelled_X is valid, if not, skip consistency loss
                     attempt_count = 0
@@ -214,10 +216,10 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
                         if attempt_count >= 100:
                             break
                         try:
-                            unlabelled_X = next(unlabelled_iterator)
+                            unlabelled_X, _ = next(unlabelled_iterator)
                         except StopIteration:
                             unlabelled_iterator = iter(unlabelled_dataloader)
-                            unlabelled_X = next(unlabelled_iterator)
+                            unlabelled_X, _ = next(unlabelled_iterator)
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         unlabelled_X = unlabelled_X.to(device)
@@ -258,7 +260,7 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
     for split in ["val", "test"]:
         # Performance without test-time augmentation
         ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs)
-        dataloader = torch.utils.data.DataLoader(
+        dataloader = DataLoader(
             ds,
             batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
         loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device)
@@ -269,7 +271,7 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
 
         # # Performance with test-time augmentation
         # ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs, clips="all")
-        # dataloader = torch.utils.data.DataLoader(
+        # dataloader = DataLoader(
         #     ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
         # loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
         # f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
