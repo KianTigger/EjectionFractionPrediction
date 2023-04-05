@@ -109,7 +109,7 @@ def run(
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
 
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, labelled_ratio=labelled_ratio, unlabelled_ratio=unlabelled_ratio, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -137,7 +137,7 @@ def run(
 
 
 
-def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None):
+def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None, labelled_ratio=10, unlabelled_ratio=1):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:
@@ -166,6 +166,10 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
     yhat = []
     y = []
 
+    unlabelled_count = 0
+    labelled_count = 0
+    ratio = unlabelled_ratio / labelled_ratio
+
     # if unlabelled_dataloader is not None:
     # unlabelled_iterator = iter(unlabelled_dataloader)
         
@@ -192,8 +196,9 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(labelled_dataloader)) as pbar:
             for (X, outcome) in labelled_dataloader:
-                # print("loaded data in {} seconds".format(time.time() - tempTime))
                 TEMP_total_data_load_time += time.time() - tempTime
+
+                labelled_count += 1
 
                 y.append(outcome.numpy())
                 X = X.to(device)
@@ -218,12 +223,17 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                     outputs = outputs.view(batch, n_clips, -1).mean(1)
 
                 tempTime = time.time()
-                # print("Calculating loss")
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
-                # print("Calculated loss in {} seconds".format(time.time() - tempTime))
                 TEMP_total_calculate_loss_time += time.time() - tempTime
 
-                if train and (unlabelled_dataloader is not None):
+                # account for unlabelled = 0
+                current_ratio = unlabelled_count / labelled_count
+                # if train and (unlabelled_dataloader is not None):
+
+
+                if train and unlabelled_count != 0 and current_ratio < ratio:
+                    unlabelled_count += 1
+                    
                     tempTime = time.time()
                     # Sample a batch from the unlabelled dataset
                     try:
@@ -231,33 +241,18 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X, _ = next(unlabelled_iterator)
-                    # print("Got unlabelled data in {} seconds".format(time.time() - tempTime))
                     TEMP_total_get_unlabelled_time += time.time() - tempTime
-
-                    # Check whether unlabelled_X is valid, if not, skip consistency loss
-                    # while not (len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None):
-                    #     #TODO see if this is needed
-                    #     print("Checking unlabelled data")
-                    #     try:
-                    #         print("trying to get next unlabelled data")
-                    #         unlabelled_X, _ = next(unlabelled_iterator)
-                    #     except StopIteration:
-                    #         print("restarting unlabelled iterator!!!!!!!!!!!!!!")
-                    #         unlabelled_iterator = iter(unlabelled_dataloader)
-                    #         unlabelled_X, _ = next(unlabelled_iterator)
 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         unlabelled_X = unlabelled_X.to(device)
                         tempTime = time.time()
-                        # print("Computing consistency loss size diff")
                         # Compute consistency loss between labelled and unlabelled data
                         unlabelled_outputs = model(unlabelled_X)
                         size_diff = outputs.size(0) - unlabelled_outputs.size(0)
-                        # print("Computed consistency loss size diff in {} seconds".format(time.time() - tempTime))
+
                         TEMP_total_computed_consistency_loss_time += time.time() - tempTime
 
                         tempTime = time.time()
-                        # print("Padding tensors")
                         # Pad the smaller tensor with zeros
                         if size_diff > 0:
                             padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
@@ -265,13 +260,10 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                         elif size_diff < 0:
                             padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
                             outputs = torch.cat((outputs, padding), dim=0)
-                        # print("Padded tensors in {} seconds".format(time.time() - tempTime))
                         TEMP_total_padded_tensor_time += time.time() - tempTime
 
                         tempTime = time.time()
-                        # print("computing consistency loss")
                         consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-                        # print("Computed consistency loss in {} seconds".format(time.time() - tempTime))
                         TEMP_total_consistency_loss_time += time.time() - tempTime
 
                         # Add consistency loss to the original loss
@@ -279,39 +271,30 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
 
                 if train:
                     tempTime = time.time()
-                    # print("Backpropagating")
                     optim.zero_grad()
-                    # print("Backpropagated in {} seconds".format(time.time() - tempTime))
                     TEMP_total_backprop_time += time.time() - tempTime
 
                     tempTime = time.time()
-                    # print("Computing gradients")
                     loss.backward()
-                    # print("Computed gradients in {} seconds".format(time.time() - tempTime))
                     TEMP_total_computing_gradient_time += time.time() - tempTime
 
                     tempTime = time.time()
-                    # print("Optimizing")
                     optim.step()
-                    # print("Optimized in {} seconds".format(time.time() - tempTime)) 
                     TEMP_total_optim_step_time += time.time() - tempTime
 
                 tempTime = time.time()
-                # print("Updating total and n loss")
                 total += loss.item() * X.size(0)
                 n += X.size(0)
-                # print("Updated total and n in {} seconds".format(time.time() - tempTime))
                 TEMP_total_total_and_n_time += time.time() - tempTime
 
                 tempTime = time.time()
                 pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
                 pbar.update()
-                # print("Updated progress bar in {} seconds".format(time.time() - tempTime))
                 TEMP_total_update_progress_bar_time += time.time() - tempTime
 
                 tempTime = time.time()
 
-    print_all = True
+    print_all = False
     if print_all:
         print("Printing all times")
         print("Total time to get labelled data: {}".format(TEMP_total_data_load_time))
