@@ -231,10 +231,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                 # if train and (unlabelled_dataloader is not None):
 
                 if train and (unlabelled_dataloader is not None) and current_ratio < ratio:
-                    print("current_ratio: ", current_ratio)
-                    print("ratio: ", ratio)
-                    print("unlabelled_count: ", unlabelled_count)
-                    print("labelled_count: ", labelled_count)
                     unlabelled_count += 1
                     
                     tempTime = time.time()
