@@ -8,7 +8,6 @@ import torch
 import torchvision
 import sklearn.metrics
 import tqdm
-import itertools
 
 import efpredict
 import efpredict.utils.helpFuncs as helpFuncs
@@ -86,8 +85,9 @@ def run(
     with open(os.path.join(output, "log.csv"), "a") as f:
 
         model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
-
-        for epoch in range(epoch_resume + 1, num_epochs + 1):
+        if epoch_resume == 0:
+            epoch_resume = 1
+        for epoch in range(epoch_resume, num_epochs + 1):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
                 start_time = time.time()
