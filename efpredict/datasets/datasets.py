@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset
-
+import torch
 class LabelledDataset(Dataset):
     def __init__(self, labelled_data, transform=None):
         self.labelled_data = labelled_data
@@ -26,4 +26,4 @@ class UnlabelledDataset(Dataset):
         data = self.unlabelled_data[idx]
         if self.transform:
             data = self.transform(data)
-        return data, -1  # -1 indicates unlabelled data
+        return data, torch.tensor(-1)  # -1 indicates unlabelled data
