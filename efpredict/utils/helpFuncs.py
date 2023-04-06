@@ -193,4 +193,7 @@ def custom_collate(batch):
     batch = list(filter(lambda x: x is not None, batch))
     if len(batch) == 0:
         return torch.empty(0, *input_shape), torch.empty(0, *output_shape)
-    return default_collate(batch)
+    # return default_collate(batch)
+    data, _ = zip(*batch)
+    data = torch.stack(data)
+    return data
