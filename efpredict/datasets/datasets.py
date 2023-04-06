@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 import torch
-from torchvision.transforms import ToTensor
+from torchvision.transforms.functional import to_tensor
 
 class LabelledDataset(Dataset):
     def __init__(self, labelled_data, transform=None):
@@ -26,10 +26,14 @@ class UnlabelledDataset(Dataset):
 
     def __getitem__(self, idx):
         data = self.unlabelled_data[idx]
+
         if self.transform:
             data = self.transform(data)
-         # Print the type and shape of the data
-        print("Data type:", type(data))
-        print("Data shape:", data.shape)
-        data = ToTensor()(data)  # Convert data to tensor
+
+        # Process each frame individually and convert to tensor
+        tensor_frames = [to_tensor(frame) for frame in data]
+
+        # Stack the frames along a new dimension
+        data = torch.stack(tensor_frames, dim=1)
+
         return data, torch.tensor(-1)  # -1 indicates unlabelled data
