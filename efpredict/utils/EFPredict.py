@@ -169,7 +169,7 @@ def run_epoch(model, labelled_dataloader, unlabelled_dataloader, criterion, opti
 
         model.train()
 
-        n_pseudo_labelled = int(pseudo_labeling_percentage * inputs.size(0))
+        n_pseudo_labelled = int(pseudo_labeling_percentage * unlabelled_inputs.size(0))
         combined_inputs = torch.cat((inputs, unlabelled_inputs[:n_pseudo_labelled]), dim=0)
         combined_labels = torch.cat((labels, pseudo_labels[:n_pseudo_labelled]), dim=0)
 
