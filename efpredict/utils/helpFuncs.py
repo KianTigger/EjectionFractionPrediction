@@ -1,14 +1,13 @@
 import os
 import math
-import time
 
 import numpy as np
-import click
 import matplotlib.pyplot as plt
 import torch
 import torchvision
 import sklearn.metrics
-import tqdm
+
+import torch.nn.functional as F
 
 import efpredict
 
@@ -194,3 +193,38 @@ def custom_collate(batch):
     if len(batch) == 0:
         return torch.empty(0, *input_shape), torch.empty(0, *output_shape)
     return default_collate(batch)
+
+def mixup_data(x, y, alpha=0.4):
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    index = torch.randperm(batch_size).to(x.device)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    
+    return mixed_x, y_a, y_b, lam
+
+def mixmatch(model, x_labeled, y_labeled, x_unlabeled, T=0.5, K=2):
+    with torch.no_grad():
+        # Augment unlabeled data
+        augmented_unlabeled_data = [x_unlabeled for _ in range(K)]
+        # Make predictions for the augmented unlabeled data
+        preds_unlabeled = [F.softmax(model(x), dim=1) for x in augmented_unlabeled_data]
+        # Average predictions
+        avg_preds_unlabeled = torch.stack(preds_unlabeled).mean(0)
+        # Perform sharpening
+        sharpened_preds_unlabeled = avg_preds_unlabeled ** (1 / T)
+        sharpened_preds_unlabeled /= sharpened_preds_unlabeled.sum(dim=1, keepdim=True)
+
+    # Combine labeled and unlabeled data
+    x_combined = torch.cat([x_labeled] + augmented_unlabeled_data)
+    y_combined = torch.cat([y_labeled] + [sharpened_preds_unlabeled for _ in range(K)])
+
+    # Perform MixUp augmentation
+    mixed_x, y_a, y_b, lam = mixup_data(x_combined, y_combined)
+
+    return mixed_x, y_a, y_b, lam
