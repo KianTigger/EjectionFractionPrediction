@@ -94,8 +94,11 @@ def run(
                 labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
                 unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
                 
-                labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
-                unlabelled_batch_size = batch_size - labelled_batch_size
+                # labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
+                # unlabelled_batch_size = batch_size - labelled_batch_size
+
+                labelled_batch_size = batch_size
+                unlabelled_batch_size = batch_size
 
                 labelled_dataloader = DataLoader(
                     labelled_dataset, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
