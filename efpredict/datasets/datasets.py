@@ -28,5 +28,8 @@ class UnlabelledDataset(Dataset):
         data = self.unlabelled_data[idx]
         if self.transform:
             data = self.transform(data)
+         # Print the type and shape of the data
+        print("Data type:", type(data))
+        print("Data shape:", data.shape)
         data = ToTensor()(data)  # Convert data to tensor
         return data, torch.tensor(-1)  # -1 indicates unlabelled data
