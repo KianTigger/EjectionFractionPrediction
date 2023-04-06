@@ -34,6 +34,6 @@ class UnlabelledDataset(Dataset):
         tensor_frames = [to_tensor(frame) for frame in data]
 
         # Stack the frames along a new dimension
-        data = torch.stack(tensor_frames, dim=0).permute(1, 0, 2, 3)
+        data = torch.stack(tensor_frames, dim=0).permute(1, 0, 2, 3).unsqueeze(0)
 
         return data, torch.tensor(-1)  # -1 indicates unlabelled data
