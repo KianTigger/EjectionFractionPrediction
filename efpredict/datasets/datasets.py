@@ -1,5 +1,6 @@
 from torch.utils.data import Dataset
 import torch
+from torchvision.transforms import ToTensor
 
 class LabelledDataset(Dataset):
     def __init__(self, labelled_data, transform=None):
@@ -27,4 +28,5 @@ class UnlabelledDataset(Dataset):
         data = self.unlabelled_data[idx]
         if self.transform:
             data = self.transform(data)
+        data = ToTensor()(data)  # Convert data to tensor
         return data, torch.tensor(-1)  # -1 indicates unlabelled data
