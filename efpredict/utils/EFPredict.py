@@ -54,7 +54,7 @@ def run(
     # You can also use `weights=R2Plus1D_18_Weights.DEFAULT` to get the most up-to-date weights.
     weights=None,
 
-    labelled_ratio=10,
+    labelled_ratio=1,
     unlabelled_ratio=1,
 
     run_test=False,
@@ -183,18 +183,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
 
-                # if block_size is None:
-                #     outputs = model(X)
-                # else:
-                #     outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
-
-                # yhat.append(outputs.view(-1).to("cpu").detach().numpy())
-
-                # if average:
-                #     outputs = outputs.view(batch, n_clips, -1).mean(1)
-                 
-                # loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
-
                 if train and (unlabelled_dataloader is not None):
                     
                     # Sample a batch from the unlabelled dataset
@@ -207,21 +195,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, 
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
                         unlabelled_X = unlabelled_X.to(device)
                          
-                        # # Compute consistency loss between labelled and unlabelled data
-                        # unlabelled_outputs = model(unlabelled_X)
-                        # size_diff = outputs.size(0) - unlabelled_outputs.size(0)
-
-                        # # Pad the smaller tensor with zeros
-                        # if size_diff > 0:
-                        #     padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
-                        #     unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
-                        # elif size_diff < 0:
-                        #     padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
-                        #     outputs = torch.cat((outputs, padding), dim=0)
-
-                        # consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-                        # # Add consistency loss to the original loss
-                        # loss += consistency_loss
 
                 # MixMatch or FixMatch
                 mixed_x, y_a, y_b, lam = helpFuncs.mixmatch(model, X, outcome, unlabelled_X)
