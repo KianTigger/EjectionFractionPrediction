@@ -13,6 +13,8 @@ import efpredict
 import efpredict.utils.helpFuncs as helpFuncs
 from efpredict.datasets.datasets import LabelledDataset, UnlabelledDataset
 from torch.utils.data import DataLoader
+import torch.nn as nn
+
 
 # import pretrained r2plus1d_18 model from torchvision
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R3D_18_Weights, mc3_18, MC3_18_Weights
@@ -106,8 +108,12 @@ def run(
                     unlabelled_dataloader = DataLoader(
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
+                
+                criterion = nn.CrossEntropyLoss()
 
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, labelled_ratio=labelled_ratio, unlabelled_ratio=unlabelled_ratio, unlabelled_dataloader=unlabelled_dataloader)
+                # loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, unlabelled_dataloader=unlabelled_dataloader)
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, unlabelled_dataloader, criterion, optim, device, pseudo_labeling_percentage=0.5)
+                
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -135,111 +141,55 @@ def run(
 
 
 
-def run_epoch(model, labelled_dataloader, train, optim, device, save_all=False, block_size=None, unlabelled_dataloader=None, labelled_ratio=10, unlabelled_ratio=1):
-    """Run one epoch of training/evaluation for ejection fraction prediction.
+def run_epoch(model, labelled_dataloader, unlabelled_dataloader, criterion, optimizer, device, pseudo_labeling_percentage=0.5):
+    model.train()
+    running_loss = 0.0
+    correct_predictions = 0
+    
+    unlabelled_iterator = iter(unlabelled_dataloader)
+    all_predictions = []
 
-    Args:
-        model (torch.nn.Module): Model to train/evaulate.
-        dataloder (DataLoader): Dataloader for dataset.
-        train (bool): Whether or not to train model.
-        optim (torch.optim.Optimizer): Optimizer
-        device (torch.device): Device to run on
-        save_all (bool, optional): If True, return predictions for all
-            test-time augmentations separately. If False, return only
-            the mean prediction.
-            Defaults to False.
-        block_size (int or None, optional): Maximum number of augmentations
-            to run on at the same time. Use to limit the amount of memory
-            used. If None, always run on all augmentations simultaneously.
-            Default is None.
-    """
 
-    model.train(train)
+    for i, (inputs, labels) in enumerate(labelled_dataloader):
+        inputs, labels = inputs.to(device), labels.to(device)
 
-    total = 0  # total training loss
-    n = 0      # number of videos processed
-    s1 = 0     # sum of ground truth EF
-    s2 = 0     # Sum of ground truth EF squared
+        # Pseudo-labeling for unlabelled data
+        try:
+            unlabelled_inputs = next(unlabelled_iterator)
+        except StopIteration:
+            unlabelled_iterator = iter(unlabelled_dataloader)
+            unlabelled_inputs = next(unlabelled_iterator)
 
-    yhat = []
-    y = []
+        unlabelled_inputs = unlabelled_inputs.to(device)
 
-    unlabelled_iterator = None
-    if unlabelled_dataloader is not None:
-        unlabelled_iterator = iter(unlabelled_dataloader)
+        with torch.no_grad():
+            model.eval()
+            outputs = model(unlabelled_inputs)
+            pseudo_labels = torch.argmax(outputs, dim=1)
 
-    with torch.set_grad_enabled(train):
-        with tqdm.tqdm(total=len(labelled_dataloader)) as pbar:
-            for (X, outcome) in labelled_dataloader:
+        model.train()
 
-                y.append(outcome.numpy())
-                X = X.to(device)
-                outcome = outcome.to(device)
+        n_pseudo_labelled = int(pseudo_labeling_percentage * inputs.size(0))
+        combined_inputs = torch.cat((inputs, unlabelled_inputs[:n_pseudo_labelled]), dim=0)
+        combined_labels = torch.cat((labels, pseudo_labels[:n_pseudo_labelled]), dim=0)
 
-                average = (len(X.shape) == 6)
-                if average:
-                    batch, n_clips, c, f, h, w = X.shape
-                    X = X.view(-1, c, f, h, w)
+        optimizer.zero_grad()
+        outputs = model(combined_inputs)
+        loss = criterion(outputs, combined_labels)
+        loss.backward()
+        optimizer.step()
 
-                s1 += outcome.sum()
-                s2 += (outcome ** 2).sum()
+        running_loss += loss.item()
+        _, predicted = torch.max(outputs, 1)
+        correct_predictions += (predicted == combined_labels).sum().item()
 
-                if block_size is None:
-                    outputs = model(X)
-                else:
-                    outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+        all_predictions.extend(predicted.cpu().numpy())
 
-                yhat.append(outputs.view(-1).to("cpu").detach().numpy())
+    epoch_loss = running_loss / len(labelled_dataloader)
+    epoch_acc = correct_predictions / (len(labelled_dataloader) * (1 + pseudo_labeling_percentage) * labelled_dataloader.batch_size)
 
-                if average:
-                    outputs = outputs.view(batch, n_clips, -1).mean(1)
-                 
-                loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
-
-                if train and (unlabelled_dataloader is not None):
-                    
-                    # Sample a batch from the unlabelled dataset
-                    try:
-                        unlabelled_X, _ = next(unlabelled_iterator)
-                    except StopIteration:
-                        unlabelled_iterator = iter(unlabelled_dataloader)
-                        unlabelled_X, _ = next(unlabelled_iterator)
-
-                    if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
-                        unlabelled_X = unlabelled_X.to(device)
-                         
-                        # Compute consistency loss between labelled and unlabelled data
-                        unlabelled_outputs = model(unlabelled_X)
-                        size_diff = outputs.size(0) - unlabelled_outputs.size(0)
-
-                        # Pad the smaller tensor with zeros
-                        if size_diff > 0:
-                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
-                            unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
-                        elif size_diff < 0:
-                            padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
-                            outputs = torch.cat((outputs, padding), dim=0)
-
-                        consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-                        # Add consistency loss to the original loss
-                        loss += consistency_loss
-
-                if train:
-                    optim.zero_grad()
-                    loss.backward()
-                    optim.step()
-                 
-                total += loss.item() * X.size(0)
-                n += X.size(0)
-                 
-                pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
-                pbar.update()
-
-    if not save_all:
-        yhat = np.concatenate(yhat)
-    y = np.concatenate(y)
-
-    return total / n, yhat, y
+    yhat = np.array(all_predictions)
+    return epoch_loss, yhat, epoch_acc
 
 def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs):
     for split in ["val", "test"]:
