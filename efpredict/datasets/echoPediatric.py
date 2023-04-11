@@ -67,7 +67,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  use_phase_clips=True,
                  external_test_location=None):
         if root is None:
-            root = efpredict.config.PEDIATRIC_DATA_DIR
+            root = efpredict.config.PEDIATRIC_DIR
 
         super().__init__(root, target_transform=target_transform)
 
