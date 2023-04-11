@@ -136,9 +136,9 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
 
-    dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
-
     dataset["pediatric"] = efpredict.datasets.EchoPediatric(root=data_dir, **kwargs)
+
+    dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
 
     # print info about dataset pediatric
     print("Pediatric dataset info:")
