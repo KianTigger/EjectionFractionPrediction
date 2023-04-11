@@ -88,6 +88,10 @@ class EchoUnlabelled(torchvision.datasets.VisionDataset):
                 print(f"Discarding invalid file: {fname}")
 
         self.fnames = valid_fnames
+                # Assume avi if no suffix
+        self.fnames = [
+            fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
+            ]
 
     def update_batch_paths(self, data):
         # Find existing batch folders
