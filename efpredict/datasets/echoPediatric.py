@@ -207,6 +207,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         print("data filename: ", data["FileName"])
 
+        print("data filename2: ", data["FileName"].tolist())
+
         self.fnames = data["FileName"].tolist()
 
         # Assume avi if no suffix
