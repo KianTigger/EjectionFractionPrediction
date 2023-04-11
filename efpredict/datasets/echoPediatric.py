@@ -109,7 +109,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.check_missing_files()
 
-    def create_EF_Labels(self, filename="FileList.csv", outputfilename="FileListPhaseClips.csv"):
+    def create_EF_Labels(self, filename="FileList.csv", outputfilename="PediatricFileListPhaseClips.csv"):
 
         self.get_phase_labels()
 
@@ -118,10 +118,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             df2 = pd.read_csv(f)
-
-        # Print length of each dataframe
-        print(f"A4C: {len(df1)}")
-        print(f"PSAX: {len(df2)}")
 
         data = pd.concat([df1, df2]).reset_index(drop=True)
 
@@ -150,6 +146,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                     f.write(
                         f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
                 else:
+                    print("ED: ", ED_Predictions)
+                    print("ES: ", ES_Predictions)
                     for j in range(min(len(ED_Predictions), len(ES_Predictions))):
                         # ED_Prediciton must be less than ES_Prediciton
                         if ED_Predictions[j] > ES_Predictions[j]:
