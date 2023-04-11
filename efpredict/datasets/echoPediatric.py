@@ -178,11 +178,14 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             df2 = pd.read_csv(f, index_col=0)
 
+        for header in df1.columns.tolist():
+            print(header, df1[header][0])
+
         # Print length of each dataframe
         print(f"A4C2: {len(df1)}")
         print(f"PSAX2: {len(df2)}")
 
-        data = pd.concat([df1, df2])
+        data = pd.concat([df1, df2]).reset_index(drop=True)
 
         # Split the data into 85% for TRAIN+VAL and 15% for TEST
         train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
