@@ -178,6 +178,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.combined_df = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
 
+        print("len(self.combined_df)", len(self.combined_df))
+        quit()
+
 
     def get_EF_Labels(self, filename="FileList.csv"):
 
