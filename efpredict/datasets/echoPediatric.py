@@ -205,6 +205,10 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()
 
+        #print the first result in each header
+        for header in self.header:
+            print(header, data[header][0])
+
         # print fnames
         print(f"Number of videos: {len(self.fnames)}")
         print("Video names: ", self.fnames)
