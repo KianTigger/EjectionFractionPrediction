@@ -205,6 +205,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         # Assume avi if no suffix
         self.fnames = [
             fn + ".avi" for fn in self.fnames if os.path.splitext(fn)[1] == ""]
+        
+        print("first file name: ", self.fnames[0])
 
         self.outcome = data.values.tolist()
 
