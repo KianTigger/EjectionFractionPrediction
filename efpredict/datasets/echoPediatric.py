@@ -200,6 +200,11 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             data = data
 
         self.header = data.columns.tolist()
+
+        #print each header
+        for i in range(len(self.header)):
+            print(self.header[i])
+            
         self.fnames = data["FileName"].tolist()
 
         # Assume avi if no suffix
