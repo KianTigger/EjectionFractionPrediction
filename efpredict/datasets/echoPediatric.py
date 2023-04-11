@@ -154,8 +154,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                             continue
 
                         # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
-                        if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
-                            continue
+                        # if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
+                        #     continue
                         # new_name = f"{name}_phase_{j}"
                         f.write(
                             f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
