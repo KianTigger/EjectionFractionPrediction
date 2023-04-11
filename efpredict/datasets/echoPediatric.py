@@ -449,12 +449,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             video_path = os.path.join(
                 self.root, "ProcessedStrainStudyA4c", self.fnames[index])
         else:
-            if self.combined_df['Filename'].iloc[index] in os.listdir(os.path.join(self.root, "A4C", "Videos")):
+            if self.combined_df['FileName'].iloc[index] in os.listdir(os.path.join(self.root, "A4C", "Videos")):
                 video_path = os.path.join(
-                    self.root, "A4C", "Videos", self.combined_df['Filename'].iloc[index])
+                    self.root, "A4C", "Videos", self.combined_df['FileName'].iloc[index])
             else:
                 video_path = os.path.join(
-                    self.root, "PSAX", "Videos", self.combined_df['Filename'].iloc[index])
+                    self.root, "PSAX", "Videos", self.combined_df['FileName'].iloc[index])
         
         return video_path
 
