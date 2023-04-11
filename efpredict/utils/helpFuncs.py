@@ -138,11 +138,8 @@ def get_dataset(data_dir, num_train_patients, kwargs):
 
     dataset["pediatric"] = efpredict.datasets.EchoPediatric(root=data_dir, **kwargs)
 
-    # print info about dataset pediatric
-    print("Pediatric dataset info:")
-    print("Number of patients: ", len(dataset["pediatric"]))
-    print("dataset pediatric: ", dataset["pediatric"])
-    quit()
+    pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", **kwargs)
+    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", **kwargs)
 
     dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
 
@@ -154,7 +151,9 @@ def get_dataset(data_dir, num_train_patients, kwargs):
         dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
     dataset["val"] = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
 
-
+    # add the pediatric train and val to the train and val datasets
+    dataset["train"] = torch.utils.data.ConcatDataset([dataset["train"], pediatric_train])
+    dataset["val"] = torch.utils.data.ConcatDataset([dataset["val"], pediatric_val])
 
     return dataset
 

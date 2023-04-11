@@ -173,13 +173,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             self.dfpsax = pd.read_csv(f, index_col=False)
 
-        print("len(self.dfa4c)", len(self.dfa4c))
-        print("len(self.dfpsax)", len(self.dfpsax))
-
         self.combined_df = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
-
-        print("len(self.combined_df)", len(self.combined_df))
-        quit()
 
 
     def get_EF_Labels(self, filename="FileList.csv"):
