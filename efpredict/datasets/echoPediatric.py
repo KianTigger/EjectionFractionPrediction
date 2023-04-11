@@ -205,21 +205,15 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         for i in range(len(self.header)):
             print(self.header[i])
 
-        print("data filename: ", data["FileName"])
-
-        # print("data filename2: ", data["FileName"].tolist())
-
         self.fnames = data["FileName"].tolist()
-
-        print("fnames: ", self.fnames)
 
         # Assume avi if no suffix
         self.fnames = [
             fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
             ]
         
-        print("first file name: ", self.fnames[0])
-
+        print("length of fnames: ", len(self.fnames))
+        
         self.outcome = data.values.tolist()
 
     def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):

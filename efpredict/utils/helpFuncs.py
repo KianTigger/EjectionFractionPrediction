@@ -142,7 +142,6 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     print("Pediatric dataset info:")
     print("Number of patients: ", len(dataset["pediatric"]))
     print("dataset pediatric: ", dataset["pediatric"])
-    print("dataset[train]: ", dataset["train"])
     quit()
 
     dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
