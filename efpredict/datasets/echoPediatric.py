@@ -15,6 +15,7 @@ import numpy as np
 import skimage.draw
 import torchvision
 import efpredict
+from sklearn.model_selection import train_test_split
 
 
 class EchoPediatric(torchvision.datasets.VisionDataset):
@@ -183,10 +184,23 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         data = pd.concat([df1, df2]).reset_index(drop=True)
 
-        data['Split'].map(lambda x: x.upper())
+        # Split the data into 85% for TRAIN+VAL and 15% for TEST
+        train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
+
+        # Split the remaining TRAIN+VAL data into 70% for TRAIN and 15% for VAL (which is 82.35% of the original data)
+        train_data, val_data = train_test_split(train_val_data, test_size=(0.15 / 0.85), random_state=42)
+
 
         if self.split != "ALL":
-            data = data[data["Split"] == self.split]
+            # data = data[data["Split"] == self.split]
+            if self.split == "TRAIN":
+                data = train_data
+            elif self.split == "VAL":
+                data = val_data
+            elif self.split == "TEST":
+                data = test_data
+        else:
+            data = data
 
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()
