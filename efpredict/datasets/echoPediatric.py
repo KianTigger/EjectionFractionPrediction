@@ -357,9 +357,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         c, f, h, w = video.shape
 
         key = self.fnames[index]
-        # if key ends with .avi, remove it
-        if key.endswith(".avi"):
-            key = key[:-4]
         # get phase information
         phases = self.phase_values[key]  # remove .avi
 
