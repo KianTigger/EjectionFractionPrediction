@@ -173,10 +173,10 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
     def get_EF_Labels(self, filename="FileList.csv"):
         # Load video-level labels
         with open(os.path.join(self.root, 'A4C', filename)) as f:
-            df1 = pd.read_csv(f)
+            df1 = pd.read_csv(f, index_col=0)
         
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
-            df2 = pd.read_csv(f)
+            df2 = pd.read_csv(f, index_col=0)
 
         # Print length of each dataframe
         print(f"A4C2: {len(df1)}")
@@ -211,7 +211,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         # print fnames
         print(f"Number of videos: {len(self.fnames)}")
-        print("Video names: ", self.fnames)
         #print first 5
         print("First 5 video names: ", self.fnames[:5])
 
