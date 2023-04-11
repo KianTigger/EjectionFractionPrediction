@@ -173,19 +173,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
     def get_EF_Labels(self, filename="FileList.csv"):
         # Load video-level labels
         with open(os.path.join(self.root, 'A4C', filename)) as f:
-            df1 = pd.read_csv(f, index_col=False)
+            self.df1 = pd.read_csv(f, index_col=False)
         
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
-            df2 = pd.read_csv(f, index_col=False)
+            self.df2 = pd.read_csv(f, index_col=False)
 
-        for header in df1.columns.tolist():
-            print(header, df1[header][0])
-
-        # Print length of each dataframe
-        print(f"A4C2: {len(df1)}")
-        print(f"PSAX2: {len(df2)}")
-
-        data = pd.concat([df1, df2]).reset_index(drop=True)
+        data = pd.concat([self.df1, self.df2]).reset_index(drop=True)
 
         # Split the data into 85% for TRAIN+VAL and 15% for TEST
         train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
@@ -207,15 +200,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()
-
-        #print the first result in each header
-        for header in self.header:
-            print(header, data[header][0])
-
-        # print fnames
-        print(f"Number of videos: {len(self.fnames)}")
-        #print first 5
-        print("First 5 video names: ", self.fnames[:5])
 
         # Assume avi if no suffix
         self.fnames = [
