@@ -27,5 +27,5 @@ CONFIG = types.SimpleNamespace(
     FILENAME=_FILENAME,
     DATA_DIR=_PARAM.get("DATA_DIR", "a4c-video-dir/"),
     UNLABELLED_DIR=_PARAM.get("UNLABELLED_DIR", "a4c-video-dir/"),
-    PEDIACTRIC_DIR=_PARAM.get("PEDIACTRIC_DIR", "a4c-video-dir/"))
+    PEDIATRIC_DIR=_PARAM.get("PEDIATRIC_DIR", "a4c-video-dir/"))
 
