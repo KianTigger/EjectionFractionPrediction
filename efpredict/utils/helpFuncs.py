@@ -85,7 +85,9 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
         pretrained_str = "pretrained" if pretrained else "random"
         output_dir = f"output/{pretrained_str}/epochs-{num_epochs}/"
         if labelled_ratio != False and unlabelled_ratio != False:
-            output_dir += f"ratioLU-{labelled_ratio}-{unlabelled_ratio}/"
+            output_dir += f"semisupervised/ratioLU-{labelled_ratio}-{unlabelled_ratio}/"
+        else:
+            output_dir += "supervised/"
         output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
 
     os.makedirs(output, exist_ok=True)
