@@ -181,7 +181,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         # Assume avi if no suffix
         self.fnames = [
-            fn + ".avi" for fn in self.fnames if os.path.splitext(fn)[1] == ""]
+            fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
+            ]
 
         self.outcome = data.values.tolist()
 

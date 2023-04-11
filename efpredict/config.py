@@ -25,5 +25,7 @@ for filename in ["efpredict.cfg",
 
 CONFIG = types.SimpleNamespace(
     FILENAME=_FILENAME,
-    DATA_DIR=_PARAM.get("data_dir", "a4c-video-dir/"),
-    UNLABELLED_DIR=_PARAM.get("unlabelled_dir", "a4c-video-dir/"))
+    DATA_DIR=_PARAM.get("DATA_DIR", "a4c-video-dir/"),
+    UNLABELLED_DIR=_PARAM.get("UNLABELLED_DIR", "a4c-video-dir/"),
+    PEDIATRIC_DIR=_PARAM.get("PEDIATRIC_DIR", "a4c-video-dir/"))
+

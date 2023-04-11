@@ -15,6 +15,7 @@ import numpy as np
 import skimage.draw
 import torchvision
 import efpredict
+from sklearn.model_selection import train_test_split
 
 
 class EchoPediatric(torchvision.datasets.VisionDataset):
@@ -67,7 +68,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  use_phase_clips=True,
                  external_test_location=None):
         if root is None:
-            root = efpredict.config.PEDIATRIC_DATA_DIR
+            root = efpredict.config.PEDIATRIC_DIR
 
         super().__init__(root, target_transform=target_transform)
 
@@ -101,6 +102,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def get_labels(self):
 
+        self.createDataFrames()
+
         if self.use_phase_clips:
             self.create_EF_Labels()
 
@@ -109,94 +112,101 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.check_missing_files()
 
-    def create_EF_Labels(self, filename="FileList.csv", outputfilename="FileListPhaseClips.csv"):
+    def create_EF_Labels(self, filename="FileList.csv", outputfilename="PediatricFileListPhaseClips.csv"):
 
         self.get_phase_labels()
 
-        with open(os.path.join(self.root, 'A4C', filename)) as f:
-            df1 = pd.read_csv(f)
-        
-        with open(os.path.join(self.root, 'PSAX', filename)) as f:
-            df2 = pd.read_csv(f)
-
-        # Print length of each dataframe
-        print(f"A4C: {len(df1)}")
-        print(f"PSAX: {len(df2)}")
-
-        data = pd.concat([df1, df2]).reset_index(drop=True)
+        data = self.combined_df
 
         self.fnames = data["FileName"].tolist()
 
-        # Create a new csv file with the new file names, overwrite if it already exists
-        with open(os.path.join(self.root, outputfilename), 'w', newline='') as f:
-            headers = data.columns.values.tolist() + ['StartFrame', 'EndFrame']
-            f.write(','.join(headers) + '\n')
+        for dataset, datatype in [[self.dfa4c, 'A4C'], [self.dfpsax, 'PSAX']]:
 
-            for row in data.iterrows():
-                name = row[1]["FileName"]
-                try:
-                    ED_Predictions = self.phase_values[name][0]
-                    ES_Predictions = self.phase_values[name][1]
-                except KeyError:
-                    print(f"Warning: {name} has no ED or ES predictions!")
-                    ED_Predictions = [0]
-                    ES_Predictions = [self.length]
-                    self.phase_values[name] = [ED_Predictions, ES_Predictions]
-                    
-                written_line = False
-                if not ED_Predictions or not ES_Predictions:
-                    # TODO fix this, by generating the phase labels
-                    # print(f"Warning: {name} has no ED or ES predictions!")
-                    f.write(
-                        f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
-                else:
-                    for j in range(min(len(ED_Predictions), len(ES_Predictions))):
-                        # ED_Prediciton must be less than ES_Prediciton
-                        if ED_Predictions[j] > ES_Predictions[j]:
-                            continue
+            # Create a new csv file with the new file names, overwrite if it already exists
+            with open(os.path.join(self.root, datatype, outputfilename), 'w', newline='') as f:
+                headers = dataset.columns.values.tolist() + ['StartFrame', 'EndFrame']
+                f.write(','.join(headers) + '\n')
 
-                        # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
-                        if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
-                            continue
-                        # new_name = f"{name}_phase_{j}"
+                for row in dataset.iterrows():
+                    name = row[1]["FileName"]
+                    try:
+                        ED_Predictions = self.phase_values[name][0]
+                        ES_Predictions = self.phase_values[name][1]
+                    except KeyError:
+                        print(f"Warning: {name} has no ED or ES predictions!")
+                        ED_Predictions = [0]
+                        ES_Predictions = [self.length]
+                        self.phase_values[name] = [ED_Predictions, ES_Predictions]
+                        
+                    written_line = False
+                    if not ED_Predictions or not ES_Predictions:
+                        # TODO fix this, by generating the phase labels
+                        # print(f"Warning: {name} has no ED or ES predictions!")
                         f.write(
-                            f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
-                        written_line = True
+                            f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
+                    else:
+                        for j in range(min(len(ED_Predictions), len(ES_Predictions))):
+                            # ED_Prediciton must be less than ES_Prediciton
+                            if ED_Predictions[j] > ES_Predictions[j]:
+                                continue
 
-                if not written_line:
-                    # TODO fix this, by generating the phase labels
-                    # print(f"Warning: {name} has no ED or ES predictions!")
-                    f.write(
-                        f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
+                            # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
+                            # if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
+                            #     continue
+                            # new_name = f"{name}_phase_{j}"
+                            f.write(
+                                f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
+                            written_line = True
+
+                    if not written_line:
+                        # TODO fix this, by generating the phase labels
+                        print(f"Warning: {name} has no ED or ES predictions!")
+                        f.write(
+                            f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
 
         self.get_EF_Labels(filename=outputfilename)
 
-    def get_EF_Labels(self, filename="FileList.csv"):
-        # Load video-level labels
+    def createDataFrames(self, filename="FileList.csv"):
         with open(os.path.join(self.root, 'A4C', filename)) as f:
-            df1 = pd.read_csv(f)
+            self.dfa4c = pd.read_csv(f, index_col=False)
         
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
-            df2 = pd.read_csv(f)
+            self.dfpsax = pd.read_csv(f, index_col=False)
 
-        # Print length of each dataframe
-        print(f"A4C2: {len(df1)}")
-        print(f"PSAX2: {len(df2)}")
+        self.combined_df = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
 
-        data = pd.concat([df1, df2]).reset_index(drop=True)
 
-        data['Split'].map(lambda x: x.upper())
+    def get_EF_Labels(self, filename="FileList.csv"):
+
+        data = self.combined_df
+
+        # Split the data into 85% for TRAIN+VAL and 15% for TEST
+        train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
+
+        # Split the remaining TRAIN+VAL data into 70% for TRAIN and 15% for VAL (which is 82.35% of the original data)
+        train_data, val_data = train_test_split(train_val_data, test_size=(0.15 / 0.85), random_state=42)
+
 
         if self.split != "ALL":
-            data = data[data["Split"] == self.split]
+            # data = data[data["Split"] == self.split]
+            if self.split == "TRAIN":
+                data = train_data
+            elif self.split == "VAL":
+                data = val_data
+            elif self.split == "TEST":
+                data = test_data
+        else:
+            data = data
 
         self.header = data.columns.tolist()
+
         self.fnames = data["FileName"].tolist()
 
         # Assume avi if no suffix
         self.fnames = [
-            fn + ".avi" for fn in self.fnames if os.path.splitext(fn)[1] == ""]
-
+            fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
+            ]
+        
         self.outcome = data.values.tolist()
 
     def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
@@ -251,8 +261,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def check_missing_files(self):
         # Check that files are present in A4C and PSAX directories
-        missing_a4c = set(self.df1['Filename']) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
-        missing_psax = set(self.df2['Filename']) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
+        missing_a4c = set(self.dfa4c['FileName']) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
+        missing_psax = set(self.dfpsax['FileName']) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
         missing = missing_a4c.union(missing_psax)
         
         if len(missing) != 0:
@@ -347,9 +357,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         c, f, h, w = video.shape
 
         key = self.fnames[index]
-        # if key ends with .avi, remove it
-        if key.endswith(".avi"):
-            key = key[:-4]
         # get phase information
         phases = self.phase_values[key]  # remove .avi
 
@@ -441,12 +448,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             video_path = os.path.join(
                 self.root, "ProcessedStrainStudyA4c", self.fnames[index])
         else:
-            if self.combined_df['Filename'].iloc[index] in os.listdir(os.path.join(self.root, "A4C", "Videos")):
+            if self.combined_df['FileName'].iloc[index] in os.listdir(os.path.join(self.root, "A4C", "Videos")):
                 video_path = os.path.join(
-                    self.root, "A4C", "Videos", self.combined_df['Filename'].iloc[index])
+                    self.root, "A4C", "Videos", self.combined_df['FileName'].iloc[index])
             else:
                 video_path = os.path.join(
-                    self.root, "PSAX", "Videos", self.combined_df['Filename'].iloc[index])
+                    self.root, "PSAX", "Videos", self.combined_df['FileName'].iloc[index])
         
         return video_path
 

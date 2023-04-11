@@ -3,7 +3,5 @@ output*/
 .ipynb_checkpoints/
 __pycache__/
 *.swp
-efpredict.cfg
-.efpredict.cfg
 *.pyc
 efpredict.egg-info/
