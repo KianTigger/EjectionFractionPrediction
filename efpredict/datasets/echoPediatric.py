@@ -102,6 +102,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def get_labels(self):
 
+        self.createDataFrames()
+
         if self.use_phase_clips:
             self.create_EF_Labels()
 
@@ -114,17 +116,11 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.get_phase_labels()
 
-        with open(os.path.join(self.root, 'A4C', filename)) as f:
-            df1 = pd.read_csv(f)
-        
-        with open(os.path.join(self.root, 'PSAX', filename)) as f:
-            df2 = pd.read_csv(f)
-
-        data = pd.concat([df1, df2]).reset_index(drop=True)
+        data = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
 
         self.fnames = data["FileName"].tolist()
 
-        for dataset, datatype in [[df1, 'A4C'], [df2, 'PSAX']]:
+        for dataset, datatype in [[self.dfa4c, 'A4C'], [self.dfpsax, 'PSAX']]:
 
             # Create a new csv file with the new file names, overwrite if it already exists
             with open(os.path.join(self.root, datatype, outputfilename), 'w', newline='') as f:
@@ -170,15 +166,16 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.get_EF_Labels(filename=outputfilename)
 
-    def get_EF_Labels(self, filename="FileList.csv"):
-        # Load video-level labels
+    def createDataFrames(self, filename="FileList.csv"):
         with open(os.path.join(self.root, 'A4C', filename)) as f:
-            self.df1 = pd.read_csv(f, index_col=False)
+            self.dfa4c = pd.read_csv(f, index_col=False)
         
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
-            self.df2 = pd.read_csv(f, index_col=False)
+            self.dfpsax = pd.read_csv(f, index_col=False)
 
-        data = pd.concat([self.df1, self.df2]).reset_index(drop=True)
+    def get_EF_Labels(self, filename="FileList.csv"):
+
+        data = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
 
         # Split the data into 85% for TRAIN+VAL and 15% for TEST
         train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
@@ -259,8 +256,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def check_missing_files(self):
         # Check that files are present in A4C and PSAX directories
-        missing_a4c = set(self.df1['Filename']) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
-        missing_psax = set(self.df2['Filename']) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
+        missing_a4c = set(self.dfa4c['Filename']) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
+        missing_psax = set(self.dfpsax['Filename']) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
         missing = missing_a4c.union(missing_psax)
         
         if len(missing) != 0:
