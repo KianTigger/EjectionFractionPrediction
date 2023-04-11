@@ -79,6 +79,19 @@ def run(
 
     dataset = helpFuncs.get_dataset(data_dir, num_train_patients, kwargs)
 
+    success = False
+
+    while not success:
+        try:
+            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, labelled_ratio, unlabelled_ratio )
+            success = True
+        except RuntimeError as e:
+            if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
+                print("DataLoader worker killed. Restarting...")
+            else:
+                raise e
+
+def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, labelled_ratio, unlabelled_ratio):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 

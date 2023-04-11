@@ -72,13 +72,28 @@ def run(
 
     dataset = helpFuncs.get_dataset(data_dir, num_train_patients, kwargs)
 
+    success = False
+
+    while not success:
+        try:
+            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset)
+            success = True
+        except RuntimeError as e:
+            if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
+                print("DataLoader worker killed. Restarting...")
+            else:
+                raise e
+
+def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset):
+
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 
         model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
 
-        for epoch in range(epoch_resume, num_epochs):
-            #TODO make this epoch + 1
+        if epoch_resume == 0:
+            epoch_resume = 1
+        for epoch in range(epoch_resume, num_epochs + 1):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
                 start_time = time.time()
