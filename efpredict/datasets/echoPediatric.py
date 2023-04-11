@@ -182,7 +182,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         print(f"A4C2: {len(df1)}")
         print(f"PSAX2: {len(df2)}")
 
-        data = pd.concat([df1, df2]).reset_index(drop=True)
+        data = pd.concat([df1, df2])
 
         # Split the data into 85% for TRAIN+VAL and 15% for TEST
         train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
