@@ -9,5 +9,6 @@ echocardiogram videos.
 
 from .echoDynamic import EchoDynamic
 from .echoUnlabelled import EchoUnlabelled
+from .echoPediatric import EchoPediatric
 
-__all__ = ["EchoDynamic", "EchoUnlabelled"]
+__all__ = ["EchoDynamic", "EchoUnlabelled", "EchoPediatric"]

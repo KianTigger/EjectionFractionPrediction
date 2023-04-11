@@ -138,6 +138,21 @@ def get_dataset(data_dir, num_train_patients, kwargs):
 
     dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
 
+    dataset["pediatric"] = efpredict.datasets.EchoPediatric(root=data_dir, **kwargs)
+
+    # print info about dataset pediatric
+    print("Pediatric dataset info:")
+    print("Number of patients: ", len(dataset["pediatric"]))
+    print("Number of frames: ", len(dataset["pediatric"][0][0]))
+    print("Number of targets: ", len(dataset["pediatric"][0][1]))
+    print("Number of targets per patient: ", len(dataset["pediatric"][0][1][0]))
+    print("Number of targets per frame: ", len(dataset["pediatric"][0][1][0][0]))
+    print("Number of targets per frame per patient: ", len(dataset["pediatric"][0][1][0][0][0]))
+    print("Number of targets per frame per patient per target: ", len(dataset["pediatric"][0][1][0][0][0][0]))
+    
+    quit()
+
+
     # TODO again replace efpredict with own file/functions.
     dataset["train"] = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs, pad=12)
     if num_train_patients is not None and len(dataset["train"]) > num_train_patients:

@@ -72,12 +72,13 @@ def run(
     seed=0,
 ):
     # TODO Write docstrings, and explanations for args
-
-    output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
-
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
 
     dataset = helpFuncs.get_dataset(data_dir, num_train_patients, kwargs)
+
+    output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
+
+
 
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
