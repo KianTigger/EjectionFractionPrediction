@@ -190,6 +190,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if self.split != "ALL":
             # data = data[data["Split"] == self.split]
             if self.split == "TRAIN":
+                print("TRAIN")
                 data = train_data
             elif self.split == "VAL":
                 data = val_data
