@@ -85,12 +85,10 @@ def run(
                 raise e
 
 def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset):
-
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 
         model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
-
         if epoch_resume == 0:
             epoch_resume = 1
         for epoch in range(epoch_resume, num_epochs + 1):

@@ -78,8 +78,6 @@ def run(
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
 
-
-
     success = False
 
     while not success:
@@ -95,7 +93,6 @@ def run(
 def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, labelled_ratio, unlabelled_ratio):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
-
         model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
         if epoch_resume == 0:
             epoch_resume = 1
