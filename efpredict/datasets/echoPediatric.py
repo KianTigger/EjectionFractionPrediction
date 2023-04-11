@@ -116,7 +116,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.get_phase_labels()
 
-        data = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
+        data = self.combined_df
 
         self.fnames = data["FileName"].tolist()
 
@@ -173,9 +173,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             self.dfpsax = pd.read_csv(f, index_col=False)
 
+        self.combined_df = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
+
+
     def get_EF_Labels(self, filename="FileList.csv"):
 
-        data = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
+        data = self.combined_df
 
         # Split the data into 85% for TRAIN+VAL and 15% for TEST
         train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
