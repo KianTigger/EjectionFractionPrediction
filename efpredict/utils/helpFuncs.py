@@ -143,6 +143,7 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     # print info about dataset pediatric
     print("Pediatric dataset info:")
     print("Number of patients: ", len(dataset["pediatric"]))
+    print("dataset pediatric: ", dataset["pediatric"])
     quit()
 
 
