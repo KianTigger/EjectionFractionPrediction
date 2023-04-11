@@ -173,6 +173,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             self.dfpsax = pd.read_csv(f, index_col=False)
 
+        print("len(self.dfa4c)", len(self.dfa4c))
+        print("len(self.dfpsax)", len(self.dfpsax))
+
         self.combined_df = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
 
 
@@ -190,7 +193,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if self.split != "ALL":
             # data = data[data["Split"] == self.split]
             if self.split == "TRAIN":
-                print("TRAIN")
                 data = train_data
             elif self.split == "VAL":
                 data = val_data
@@ -201,18 +203,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.header = data.columns.tolist()
 
-        #print each header
-        for i in range(len(self.header)):
-            print(self.header[i])
-
         self.fnames = data["FileName"].tolist()
 
         # Assume avi if no suffix
         self.fnames = [
             fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
             ]
-        
-        print("length of fnames: ", len(self.fnames))
         
         self.outcome = data.values.tolist()
 
