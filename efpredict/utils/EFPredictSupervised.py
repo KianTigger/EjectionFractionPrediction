@@ -177,11 +177,14 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             step_resume = 630
-
+            print("here")
+            pbar.update(1)
+            print("here2")
             # Update the progress bar step_resume times
-            pbar.update(step_resume)
-
+            pbar.update(step_resume-1)
+            print("here3")
             for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
+                print("here4")
          
                 if step % (int(len(dataloader)//10)) == 0:
                     print("step: ", step)
