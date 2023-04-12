@@ -143,11 +143,10 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-    if train_val_test_unlabel_split[3] == 0:
-        pediatric_unlabel = None
-    else:
+    if train_val_test_unlabel_split[3] != 0:
         pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-    print("5")
+    else:
+        pediatric_unlabel = None
 
     dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
@@ -158,13 +157,18 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
         dynamic_unlabel = None
 
     dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
-    print("Total train: ", len(dataset["train"]))
     dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])
-    print("Total val: ", len(dataset["val"]))
     dataset["test"] = torch.utils.data.ConcatDataset([pediatric_test, dynamic_test])
     print("Total labelled: ", len(dataset["train"]) + len(dataset["val"]) + len(dataset["test"]))
 
-    dataset["unlabelled"] = torch.utils.data.ConcatDataset([pediatric_unlabel, dynamic_unlabel])
+    if pediatric_unlabel is not None and dynamic_unlabel is not None:
+        dataset["unlabelled"] = torch.utils.data.ConcatDataset([pediatric_unlabel, dynamic_unlabel])
+    elif pediatric_unlabel is not None:
+        dataset["unlabelled"] = pediatric_unlabel
+    elif dynamic_unlabel is not None:
+        dataset["unlabelled"] = dynamic_unlabel
+    else:
+        dataset["unlabelled"] = None
     print("Total unlabelled: ", len(dataset["unlabelled"]))
     
     return dataset
