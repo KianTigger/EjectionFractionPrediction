@@ -136,17 +136,12 @@ def mean_and_std(data_dir, task, frames, period):
     
     return kwargs
 
-def get_dataset(data_dir, num_train_patients, kwargs):
+def get_dataset(data_dir, kwargs):
     # Set up datasets and dataloaders
     dataset = {}
 
 
     pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", **kwargs)
-    # print first 5 patients
-    for i in range(5):
-        print(pediatric_train[i])
-    
-    quit()
     pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", **kwargs)
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", **kwargs)
 
@@ -154,17 +149,18 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
     dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", **kwargs)
 
-    dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
+    if True:
+        dataset["unlabelled"] = efpredict.datasets.EchoPediatric(root=data_dir, split="all", **kwargs)
+        dataset["train"] = dynamic_train
+        dataset["val"] = dynamic_val
+        dataset["test"] = dynamic_test
+    
+    else:
 
-    # TODO again replace efpredict with own file/functions.
-    # if num_train_patients is not None and len(dataset["train"]) > num_train_patients:
-    #     # Subsample patients (used for ablation experiment)
-    #     indices = np.random.choice(len(dataset["train"]), num_train_patients, replace=False)
-    #     dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
-
-    dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
-    dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])
-    dataset["test"] = torch.utils.data.ConcatDataset([pediatric_test, dynamic_test])
+        dataset["unlabelled"] = get_unlabelled_dataset(data_dir)
+        dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
+        dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])
+        dataset["test"] = torch.utils.data.ConcatDataset([pediatric_test, dynamic_test])
 
     return dataset
 

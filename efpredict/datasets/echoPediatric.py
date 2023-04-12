@@ -61,6 +61,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  length=16, period=2,
                  max_length=250,
                  clips=1,
+                 tvt_split=[0.7, 0.15, 0.15],
                  createAllClips=False,
                  pad=None,
                  noise=None,
@@ -82,6 +83,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.max_length = max_length
         self.period = period
         self.clips = clips
+        self.tvt_split = tvt_split
         self.createAllClips = createAllClips
         self.pad = pad
         self.noise = noise
@@ -180,15 +182,25 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         data = self.combined_df
 
-        # Split the data into 85% for TRAIN+VAL and 15% for TEST
-        train_val_data, test_data = train_test_split(data, test_size=0.15, random_state=42)
-
-        # Split the remaining TRAIN+VAL data into 70% for TRAIN and 15% for VAL (which is 82.35% of the original data)
-        train_data, val_data = train_test_split(train_val_data, test_size=(0.15 / 0.85), random_state=42)
-
-
         if self.split != "ALL":
             # data = data[data["Split"] == self.split]
+
+            train_split = self.tvt_split[0]
+            val_split = self.tvt_split[1]
+            test_split = self.tvt_split[2]
+
+            # if they don't add up to 1, then normalize them
+            if train_split + val_split + test_split != 1:
+                train_split /= (train_split + val_split + test_split)
+                val_split /= (train_split + val_split + test_split)
+                test_split /= (train_split + val_split + test_split)
+
+            # Split the data into 85% for TRAIN+VAL and 15% for TEST
+            train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
+
+            # Split the remaining TRAIN+VAL data into 70% for TRAIN and 15% for VAL (which is 82.35% of the original data)
+            train_data, val_data = train_test_split(train_val_data, test_size=(val_split / 1-test_split), random_state=42)
+
             if self.split == "TRAIN":
                 data = train_data
             elif self.split == "VAL":

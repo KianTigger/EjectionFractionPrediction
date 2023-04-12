@@ -74,7 +74,7 @@ def run(
     # TODO Write docstrings, and explanations for args
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
 
-    dataset = helpFuncs.get_dataset(data_dir, num_train_patients, kwargs)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs)
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
 
@@ -127,7 +127,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
                     
                 checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": bestLoss, "bestLoss": bestLoss, "scheduler": scheduler}
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, labelled_ratio=labelled_ratio, unlabelled_ratio=unlabelled_ratio, unlabelled_dataloader=unlabelled_dataloader)
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -158,7 +158,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
 
 
 
-def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, checkpoint_args, save_all=False, block_size=None, unlabelled_dataloader=None, labelled_ratio=10, unlabelled_ratio=1):
+def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, checkpoint_args, save_all=False, block_size=None, unlabelled_dataloader=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:

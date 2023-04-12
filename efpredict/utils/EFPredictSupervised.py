@@ -71,7 +71,7 @@ def run(
 
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
 
-    dataset = helpFuncs.get_dataset(data_dir, num_train_patients, kwargs)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs)
 
     success = False
 
