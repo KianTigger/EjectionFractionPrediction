@@ -151,14 +151,26 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", **kwargs)
     print("Dynamic train: ", len(dynamic_train))
 
-    pediatric_train_list = [pediatric_train[i] for i in range(len(pediatric_train))]
-    print("Pediatric train list: ", len(pediatric_train_list))
-    pediatric_val_list = [pediatric_val[i] for i in range(len(pediatric_val))]
-    pediatric_test_list = [pediatric_test[i] for i in range(len(pediatric_test))]
+    pediatric_train_loader = torch.utils.data.DataLoader(pediatric_train, batch_size=1)
+    pediatric_val_loader = torch.utils.data.DataLoader(pediatric_val, batch_size=1)
+    pediatric_test_loader = torch.utils.data.DataLoader(pediatric_test, batch_size=1)
+    print("1")
 
-    dynamic_train_list = [dynamic_train[i] for i in range(len(dynamic_train))]
-    dynamic_val_list = [dynamic_val[i] for i in range(len(dynamic_val))]
-    dynamic_test_list = [dynamic_test[i] for i in range(len(dynamic_test))]
+    dynamic_train_loader = torch.utils.data.DataLoader(dynamic_train, batch_size=1)
+    dynamic_val_loader = torch.utils.data.DataLoader(dynamic_val, batch_size=1)
+    dynamic_test_loader = torch.utils.data.DataLoader(dynamic_test, batch_size=1)
+    print("2")
+
+    pediatric_train_list = [item for batch in pediatric_train_loader for item in batch]
+    pediatric_val_list = [item for batch in pediatric_val_loader for item in batch]
+    pediatric_test_list = [item for batch in pediatric_test_loader for item in batch]
+    print("3")
+
+    dynamic_train_list = [item for batch in dynamic_train_loader for item in batch]
+    dynamic_val_list = [item for batch in dynamic_val_loader for item in batch]
+    dynamic_test_list = [item for batch in dynamic_test_loader for item in batch]
+    print("4")
+
 
 
     # pediatric_train_list = list(pediatric_train)
