@@ -97,8 +97,13 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
-        if epoch_resume == 0:
-            epoch_resume = 1
+        if epoch_resume != 0:
+            if step_resume == 0:
+                epoch_resume += 1
+            if epoch_resume > num_epochs and run_test:
+                print("Running tests")
+            else:
+                print("Resuming from epoch #{}".format(epoch_resume), flush=True)
         for epoch in range(epoch_resume, num_epochs + 1):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
@@ -149,7 +154,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
             f.flush()
 
         if run_test:
-            test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
+            helpFuncs.test_resuls(f, output, model, dataset, batch_size, num_workers, device)  
 
 
 
@@ -271,49 +276,3 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
     y = np.concatenate(y)
 
     return total / n, yhat, y
-
-def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs):
-    for split in ["val", "test"]:
-        # Performance without test-time augmentation
-        ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs)
-        dataloader = DataLoader(
-            ds,
-            batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
-        loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, 0, None)
-        f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
-        f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
-        f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
-        f.flush()
-
-        # # Performance with test-time augmentation
-        # ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs, clips="all")
-        # dataloader = DataLoader(
-        #     ds, batch_size=1, num_workers=num_workers, shuffle=False, pin_memory=(device.type == "cuda"))
-        # loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, save_all=True, block_size=batch_size)
-        # f.write("{} (all clips) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.r2_score)))
-        # f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
-        # f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
-        # f.flush()
-
-        # Write full performance to file
-        with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
-            for (filename, pred) in zip(ds.fnames, yhat):
-                if np.isscalar(pred) or isinstance(pred, (int, float)):  # check if pred is a single value
-                    pred = [pred]  # wrap it in a list to handle it properly
-                for (i, p) in enumerate(pred):
-                    g.write("{},{},{:.4f}\n".format(filename, i, p))
-        efpredict.utils.latexify()
-        yhat = np.array(list(map(lambda x: x.mean(), yhat)))
-
-        # Calculate the mean and standard deviation of the predictions and print them
-        mean = np.mean(yhat)
-        std = np.std(yhat)
-        print("Mean: {:.2f}".format(mean))
-        print("Std: {:.2f}".format(std))
-
-        #TODO check that y is the real EF
-        print("MAE: {:.2f}".format(sklearn.metrics.mean_absolute_error(y, yhat)))
-        print("RMSE: {:.2f}".format(math.sqrt(sklearn.metrics.mean_squared_error(y, yhat))))
-        print("R2: {:.2f}".format(sklearn.metrics.r2_score(y, yhat)))
-
-        # plot_results(y, yhat, split, output)

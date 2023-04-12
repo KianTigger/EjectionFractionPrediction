@@ -167,6 +167,49 @@ def get_unlabelled_dataset(data_dir):
     unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
     return unlabelled_dataset
 
+def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
+    for split in ["val", "test"]:
+        # Performance without test-time augmentation
+        ds = dataset[split]
+        dataloader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
+        loss, yhat, y = efpredict.utils.EFPredictSupervised.run_epoch(model, dataloader, False, None, device, 0, None)
+        f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
+        f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
+        f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
+        f.flush()
+
+        print("ds", ds)
+        print("dataset", dataset)
+
+        # Write full performance to file
+        with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
+            for ds_part in ds.datasets:  # Iterate through the datasets within the ConcatDataset
+                for (filename, pred) in zip(ds_part.fnames, yhat):
+                    if np.isscalar(pred) or isinstance(pred, (int, float)):  # check if pred is a single value
+                        pred = [pred]  # wrap it in a list to handle it properly
+                    for (i, p) in enumerate(pred):
+                        g.write("{},{},{:.4f}\n".format(filename, i, p))
+        efpredict.utils.latexify()
+        yhat = np.array(list(map(lambda x: x.mean(), yhat)))
+
+        # Calculate the mean and standard deviation of the predictions and print them
+        mean = np.mean(yhat)
+        std = np.std(yhat)
+        print("Mean: {:.2f}".format(mean))
+        print("Std: {:.2f}".format(std))
+
+        #TODO check that y is the real EF
+        #Print the MAE
+        print("MAE: {:.2f}".format(sklearn.metrics.mean_absolute_error(y, yhat)))
+        #Print the RMSE
+        print("RMSE: {:.2f}".format(math.sqrt(sklearn.metrics.mean_squared_error(y, yhat))))
+        #Print the R2
+        print("R2: {:.2f}".format(sklearn.metrics.r2_score(y, yhat)))
+
+        # plot_results(y, yhat, split, output)
+
 def plot_results(y, yhat, split, output):  
         # Plot actual and predicted EF
         fig = plt.figure(figsize=(3, 3))
