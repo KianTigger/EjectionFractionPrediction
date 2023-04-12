@@ -191,7 +191,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                 if step % (int(len(labelled_dataloader)//10)) == 0:
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
-                            checkpoint_args["epoch"], checkpoint_args["output"], checkpoint_args["loss"], 
+                            checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], y, yhat, optim, checkpoint_args["scheduler"])
 
                 y.append(outcome.numpy())
