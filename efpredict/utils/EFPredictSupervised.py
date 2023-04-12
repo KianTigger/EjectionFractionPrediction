@@ -1,3 +1,4 @@
+import itertools
 import os
 import math
 import time
@@ -162,17 +163,26 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
     yhat = []
     y = []
 
+    # with torch.set_grad_enabled(train):
+    #     with tqdm.tqdm(total=len(dataloader)) as pbar:
+    #         for step, (X, outcome) in enumerate(dataloader):
+    #             step_resume = 200
+    #             if step_resume > 0 and step < step_resume:
+    #                 # Skip steps before step_resume
+    #                 print("Skipping step: ", step)
+    #                 pbar.update(1)
+    #                 continue
+    #             print("step: ", step)
+
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            for step, (X, outcome) in enumerate(dataloader):
-                step_resume = 200
-                if step_resume > 0 and step < step_resume:
-                    # Skip steps before step_resume
-                    print("Skipping step: ", step)
-                    pbar.update(1)
-                    continue
-                print("step: ", step)
+            step_resume = 630
 
+            # Update the progress bar step_resume times
+            pbar.update(step_resume)
+
+            for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
+         
                 if step % (int(len(dataloader)//10)) == 0:
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 

@@ -31,6 +31,7 @@ setuptools.setup(
         "tqdm",
         "sklearn",
         "pillow",
+        "itertools",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
