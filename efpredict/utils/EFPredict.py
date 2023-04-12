@@ -198,7 +198,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     pbar.update(1)
                     continue
 
-                if step % (int(num_items//10)) == 0:
+                if step % (int(num_items//10)) == 0 and train:
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
@@ -279,7 +279,7 @@ def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **k
         dataloader = DataLoader(
             ds,
             batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
-        loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device)
+        loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, dataloader, False, None, device, 0, None)
         f.write("{} (one clip) R2:   {:.3f} ({:.3f} - {:.3f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.r2_score)))
         f.write("{} (one clip) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_absolute_error)))
         f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
