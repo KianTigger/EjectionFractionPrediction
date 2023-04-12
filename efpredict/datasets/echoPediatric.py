@@ -200,9 +200,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
             # if they don't add up to 1, then normalize them
             if train_split + val_split + test_split != 1:
+                print("here 1")
                 train_split /= (train_split + val_split + test_split)
                 val_split /= (train_split + val_split + test_split)
                 test_split /= (train_split + val_split + test_split)
+            print(f"TRAIN: {train_split}, VAL: {val_split}, TEST: {test_split}")
+            
 
             # Split the data into 85% for TRAIN+VAL and 15% for TEST
             train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
