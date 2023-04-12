@@ -104,7 +104,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
-                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": loss, "bestLoss": bestLoss, "scheduler": scheduler}
+                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": bestLoss, "bestLoss": bestLoss, "scheduler": scheduler}
                 loss, yhat, y = efpredict.utils.EFPredictSupervised.run_epoch(model, dataloader, phase == "train", optim, device, step_resume, checkpoint_args)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
