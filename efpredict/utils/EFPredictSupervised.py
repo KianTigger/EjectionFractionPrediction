@@ -78,7 +78,7 @@ def run(
         try:
             print("Starting training loop")
             print("Period: {}".format(period))
-            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, **kwargs)
+            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, kwargs)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
@@ -86,7 +86,7 @@ def run(
             else:
                 raise e
 
-def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, **kwargs):
+def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, kwargs):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 

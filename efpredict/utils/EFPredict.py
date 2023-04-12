@@ -82,7 +82,7 @@ def run(
 
     while not success:
         try:
-            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, **kwargs)
+            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, kwargs)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
@@ -90,7 +90,7 @@ def run(
             else:
                 raise e
 
-def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, **kwargs):
+def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, kwargs):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
