@@ -168,8 +168,10 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 step_resume = 200
                 if step_resume > 0 and step < step_resume:
                     # Skip steps before step_resume
+                    print("Skipping step: ", step)
                     pbar.update(1)
                     continue
+                print("step: ", step)
 
                 if step % (int(len(dataloader)//10)) == 0:
                     print("step: ", step)
