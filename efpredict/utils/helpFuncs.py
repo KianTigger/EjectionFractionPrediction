@@ -137,44 +137,47 @@ def mean_and_std(data_dir, task, frames, period):
     
     return kwargs
 
-def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, percentage_pediatric_labelled=100):
+def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=100, percentage_pediatric_labelled=100):
     # Set up datasets and dataloaders
     dataset = {}
 
     pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, **kwargs)
-    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, **kwargs)
-    pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, **kwargs)
+    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type,**kwargs)
+    pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type,**kwargs)
 
     dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs)
     dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
     dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", **kwargs)
 
-    # Sample the specified percentage of data and create unlabelled datasets
-    pediatric_train_labelled = random.sample(pediatric_train, int(len(pediatric_train) * percentage_pediatric_labelled / 100))
-    pediatric_train_unlabelled = [x for x in pediatric_train if x not in pediatric_train_labelled]
+    pediatric_train_list = list(pediatric_train)
+    pediatric_val_list = list(pediatric_val)
+    pediatric_test_list = list(pediatric_test)
 
-    pediatric_val_labelled = random.sample(pediatric_val, int(len(pediatric_val) * percentage_pediatric_labelled / 100))
-    pediatric_val_unlabelled = [x for x in pediatric_val if x not in pediatric_val_labelled]
+    dynamic_train_list = list(dynamic_train)
+    dynamic_val_list = list(dynamic_val)
+    dynamic_test_list = list(dynamic_test)
 
-    pediatric_test_labelled = random.sample(pediatric_test, int(len(pediatric_test) * percentage_pediatric_labelled / 100))
-    pediatric_test_unlabelled = [x for x in pediatric_test if x not in pediatric_test_labelled]
+    pediatric_train_labelled = random.sample(pediatric_train_list, int(len(pediatric_train_list) * percentage_pediatric_labelled / 100))
+    pediatric_val_labelled = random.sample(pediatric_val_list, int(len(pediatric_val_list) * percentage_pediatric_labelled / 100))
+    pediatric_test_labelled = random.sample(pediatric_test_list, int(len(pediatric_test_list) * percentage_pediatric_labelled / 100))
 
-    dynamic_train_labelled = random.sample(dynamic_train, int(len(dynamic_train) * percentage_dynamic_labelled / 100))
-    dynamic_train_unlabelled = [x for x in dynamic_train if x not in dynamic_train_labelled]
+    dynamic_train_labelled = random.sample(dynamic_train_list, int(len(dynamic_train_list) * percentage_dynamic_labelled / 100))
+    dynamic_val_labelled = random.sample(dynamic_val_list, int(len(dynamic_val_list) * percentage_dynamic_labelled / 100))
+    dynamic_test_labelled = random.sample(dynamic_test_list, int(len(dynamic_test_list) * percentage_dynamic_labelled / 100))
 
-    dynamic_val_labelled = random.sample(dynamic_val, int(len(dynamic_val) * percentage_dynamic_labelled / 100))
-    dynamic_val_unlabelled = [x for x in dynamic_val if x not in dynamic_val_labelled]
+    dataset["train"] = torch.utils.data.ConcatDataset(pediatric_train_labelled + dynamic_train_labelled)
+    dataset["val"] = torch.utils.data.ConcatDataset(pediatric_val_labelled + dynamic_val_labelled)
+    dataset["test"] = torch.utils.data.ConcatDataset(pediatric_test_labelled + dynamic_test_labelled)
 
-    dynamic_test_labelled = random.sample(dynamic_test, int(len(dynamic_test) * percentage_dynamic_labelled / 100))
-    dynamic_test_unlabelled = [x for x in dynamic_test if x not in dynamic_test_labelled]
+    pediatric_train_unlabelled = list(set(pediatric_train_list) - set(pediatric_train_labelled))
+    pediatric_val_unlabelled = list(set(pediatric_val_list) - set(pediatric_val_labelled))
+    pediatric_test_unlabelled = list(set(pediatric_test_list) - set(pediatric_test_labelled))
 
-    dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train_labelled, dynamic_train_labelled])
-    dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val_labelled, dynamic_val_labelled])
-    dataset["test"] = torch.utils.data.ConcatDataset([pediatric_test_labelled, dynamic_test_labelled])
+    dynamic_train_unlabelled = list(set(dynamic_train_list) - set(dynamic_train_labelled))
+    dynamic_val_unlabelled = list(set(dynamic_val_list) - set(dynamic_val_labelled))
+    dynamic_test_unlabelled = list(set(dynamic_test_list) - set(dynamic_test_labelled))
 
-    dataset["unlabelled"] = torch.utils.data.ConcatDataset([pediatric_train_unlabelled, pediatric_val_unlabelled,
-                                                             pediatric_test_unlabelled, dynamic_train_unlabelled,
-                                                             dynamic_val_unlabelled, dynamic_test_unlabelled])
+    dataset["unlabelled"] = torch.utils.data.ConcatDataset(pediatric_train_unlabelled + pediatric_val_unlabelled + pediatric_test_unlabelled + dynamic_train_unlabelled + dynamic_val_unlabelled + dynamic_test_unlabelled)
 
     return dataset
 
