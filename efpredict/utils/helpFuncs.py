@@ -140,7 +140,7 @@ def mean_and_std(data_dir, task, frames, period):
 def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0]):
     # Set up datasets and dataloaders
     dataset = {}
-
+    print("train_val_test_unlabel_split: ", train_val_test_unlabel_split)
     pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
