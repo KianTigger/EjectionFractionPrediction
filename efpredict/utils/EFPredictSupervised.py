@@ -92,6 +92,8 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
         if epoch_resume == 0:
             epoch_resume = 1
+        print("Resuming from epoch #{}".format(epoch_resume), flush=True)
+        print("num_epochs: {}".format(num_epochs), flush=True)
         for epoch in range(epoch_resume, num_epochs + 1):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
