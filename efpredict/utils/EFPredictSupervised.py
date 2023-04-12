@@ -120,6 +120,8 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
                                                               batch_size))
                 f.flush()
 
+                step_resume = 0
+
             scheduler.step()
 
             bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, optim, scheduler)

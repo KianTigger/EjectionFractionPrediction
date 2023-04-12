@@ -82,13 +82,16 @@ def run(
 
     while not success:
         try:
-            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, kwargs)
+            print("Starting training loop")
+            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, run_test)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
                 print("DataLoader worker killed. Restarting...")
             else:
-                raise e
+                # raise e
+                print("RuntimeError: {}".format(e))
+                print("Restarting...")
 
 def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, kwargs):
     # Run training and testing loops
