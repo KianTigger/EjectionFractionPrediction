@@ -147,13 +147,19 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     print("3")
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     print("4")
-    pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    if train_val_test_unlabel_split[3] == 0:
+        pediatric_unlabel = None
+    else:
+        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     print("5")
 
     dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-    dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+    if percentage_dynamic_labelled != 100:
+        dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+    else:
+        dynamic_unlabel = None
     print("Dynamic train: ", len(dynamic_train))
 
     dataset["train"] = torch.utils.data.ConcatDataset(pediatric_train + dynamic_train)
