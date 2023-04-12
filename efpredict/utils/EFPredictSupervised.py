@@ -182,7 +182,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
             pbar.update(step_resume)
             
             # for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
-            for step, (X, outcome) in enumerate(labelled_dataloader):
+            for step, (X, outcome) in enumerate(dataloader):
 
                 print("here4")
          
