@@ -233,7 +233,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
 def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
     for split in ["val", "test"]:
         # Performance without test-time augmentation
-        ds = dataset["test"]
+        ds = dataset[split]
         dataloader = torch.utils.data.DataLoader(
             ds,
             batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
@@ -252,6 +252,9 @@ def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
         # f.write("{} (all clips) MAE:  {:.2f} ({:.2f} - {:.2f})\n".format(split, *efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_absolute_error)))
         # f.write("{} (all clips) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, np.array(list(map(lambda x: x.mean(), yhat))), sklearn.metrics.mean_squared_error)))))
         # f.flush()
+
+        print("ds", ds)
+        print("dataset", dataset)
 
         # Write full performance to file
         with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
