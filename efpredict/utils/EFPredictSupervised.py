@@ -128,7 +128,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
             f.flush()
 
         if run_test:
-            test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
+            test_resuls(f, output, model, dataset, batch_size, num_workers, device)  
 
 def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_args, save_all=False, block_size=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
@@ -220,10 +220,10 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
 
     return total / n, yhat, y
 
-def test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs):
+def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
     for split in ["val", "test"]:
         # Performance without test-time augmentation
-        ds = efpredict.datasets.EchoDynamic(root=data_dir, split=split, **kwargs)
+        ds = dataset["test"]
         dataloader = torch.utils.data.DataLoader(
             ds,
             batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))
