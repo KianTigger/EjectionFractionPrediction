@@ -94,6 +94,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
             epoch_resume = 1
         print("Resuming from epoch #{}".format(epoch_resume), flush=True)
         print("num_epochs: {}".format(num_epochs), flush=True)
+        print("step_resume: {}".format(step_resume), flush=True)
         for epoch in range(epoch_resume, num_epochs + 1):
             print("Epoch #{}".format(epoch), flush=True)
             for phase in ['train', 'val']:
