@@ -118,7 +118,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
                     
-                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "bestLoss": bestLoss, "scheduler": scheduler}
+                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": loss, "bestLoss": bestLoss, "scheduler": scheduler}
                 loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, labelled_ratio=labelled_ratio, unlabelled_ratio=unlabelled_ratio, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
@@ -191,7 +191,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                 if step % (int(len(labelled_dataloader)//10)) == 0:
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
-                            checkpoint_args["epoch"], checkpoint_args["output"], loss, 
+                            checkpoint_args["epoch"], checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], y, yhat, optim, checkpoint_args["scheduler"])
 
                 y.append(outcome.numpy())

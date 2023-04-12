@@ -104,7 +104,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
-                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "bestLoss": bestLoss, "scheduler": scheduler}
+                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": loss, "bestLoss": bestLoss, "scheduler": scheduler}
                 loss, yhat, y = efpredict.utils.EFPredictSupervised.run_epoch(model, dataloader, phase == "train", optim, device, step_resume, checkpoint_args)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
@@ -173,7 +173,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 if step % (int(len(dataloader)//10)) == 0:
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
-                            checkpoint_args["epoch"], checkpoint_args["output"], loss, 
+                            checkpoint_args["epoch"], checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], y, yhat, optim, checkpoint_args["scheduler"])
 
 
