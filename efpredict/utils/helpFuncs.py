@@ -162,12 +162,16 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     print("2")
 
     pediatric_train_list = [item for batch in pediatric_train_loader for item in batch]
+    print("3")
     pediatric_val_list = [item for batch in pediatric_val_loader for item in batch]
+    print("3")
     pediatric_test_list = [item for batch in pediatric_test_loader for item in batch]
     print("3")
 
     dynamic_train_list = [item for batch in dynamic_train_loader for item in batch]
+    print("4")
     dynamic_val_list = [item for batch in dynamic_val_loader for item in batch]
+    print("4")
     dynamic_test_list = [item for batch in dynamic_test_loader for item in batch]
     print("4")
 
