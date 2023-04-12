@@ -77,7 +77,6 @@ def run(
     while not success:
         try:
             print("Starting training loop")
-            print("Period: {}".format(period))
             run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, kwargs)
             success = True
         except RuntimeError as e:
@@ -160,8 +159,6 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
     yhat = []
     y = []
 
-    print("dataloder: ", dataloader)
-
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for step, (X, outcome) in enumerate(dataloader):
@@ -173,7 +170,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 if step % (int(len(dataloader)//10)) == 0:
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
-                            checkpoint_args["epoch"], checkpoint_args["output"], checkpoint_args["loss"], 
+                            checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], y, yhat, optim, checkpoint_args["scheduler"])
 
 
