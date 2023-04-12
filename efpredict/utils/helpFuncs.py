@@ -34,7 +34,7 @@ def get_checkpoint(model, optim, scheduler, output, f):
     
     return model, optim, scheduler, epoch_resume, step_resume, bestLoss
 
-def save_checkpoint(model, period, frames, epoch, step, output, loss, bestLoss, y, yhat, optim, scheduler):
+def save_checkpoint(model, period, frames, epoch, step, output, loss, bestLoss, optim, scheduler):
         #TODO change this to match original run.
         # Save checkpoint
         save = {
@@ -45,7 +45,6 @@ def save_checkpoint(model, period, frames, epoch, step, output, loss, bestLoss, 
             'frames': frames,
             'best_loss': bestLoss,
             'loss': loss,
-            'r2': sklearn.metrics.r2_score(y, yhat),
             'opt_dict': optim.state_dict(),
             'scheduler_dict':scheduler.state_dict(),
         }

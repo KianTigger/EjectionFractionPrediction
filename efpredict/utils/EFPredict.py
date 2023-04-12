@@ -133,7 +133,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
 
             scheduler.step()
             
-            bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, y, yhat, optim, scheduler)
+            bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, optim, scheduler)
 
         # Load best weights
         if num_epochs != 0:
@@ -192,7 +192,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
-                            checkpoint_args["bestLoss"], y, yhat, optim, checkpoint_args["scheduler"])
+                            checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
 
                 y.append(outcome.numpy())
                 X = X.to(device)
