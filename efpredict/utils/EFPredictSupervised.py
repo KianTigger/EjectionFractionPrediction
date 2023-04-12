@@ -170,7 +170,8 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                     pbar.update(1)
                     continue
 
-                if step % (int(len(dataloader)//10)) == 0:
+                # if step % (int(len(dataloader)//10)) == 0:
+                if step == 10:
                     print("step: ", step)
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
