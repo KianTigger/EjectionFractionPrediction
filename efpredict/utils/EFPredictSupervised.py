@@ -78,7 +78,7 @@ def run(
     while not success:
         try:
             print("Starting training loop")
-            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, kwargs)
+            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, run_test)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
@@ -86,7 +86,7 @@ def run(
             else:
                 raise e
 
-def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, kwargs):
+def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, run_test):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 
@@ -176,13 +176,13 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
 
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            step_resume = 630
+            step_resume = 30
 
             # Update the progress bar step_resume times
             pbar.update(step_resume)
             
-            # for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
-            for step, (X, outcome) in enumerate(dataloader):
+            for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
+            # for step, (X, outcome) in enumerate(dataloader):
 
                 print("here4")
          
