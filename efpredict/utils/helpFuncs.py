@@ -3,6 +3,7 @@ import math
 import random
 import time
 
+import pandas as pd
 import numpy as np
 import click
 import matplotlib.pyplot as plt
@@ -146,7 +147,7 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     if train_val_test_unlabel_split[3] != 0:
         pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     else:
-        pediatric_unlabel = None
+        pediatric_unlabel = pd.DataFrame()
 
     dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
@@ -154,7 +155,7 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     if percentage_dynamic_labelled != 100:
         dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     else:
-        dynamic_unlabel = None
+        dynamic_unlabel = pd.DataFrame()
 
     dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
     dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])
@@ -168,7 +169,7 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     elif dynamic_unlabel is not None:
         dataset["unlabelled"] = dynamic_unlabel
     else:
-        dataset["unlabelled"] = None
+        dataset["unlabelled"] = pd.DataFrame()
     print("Total unlabelled: ", len(dataset["unlabelled"]))
     
     return dataset
