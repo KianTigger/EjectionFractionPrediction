@@ -63,6 +63,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  mean=0., std=1.,
                  length=16, period=2,
                  max_length=250,
+                 percentage_dynamic_labelled=100,
                  clips=1,
                  createAllClips=False,
                  pad=None,
@@ -79,6 +80,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         if not isinstance(target_type, list):
             target_type = [target_type]
         self.target_type = target_type
+        self.percentage_dynamic_labelled = percentage_dynamic_labelled
         self.mean = mean
         self.std = std
         self.length = length
@@ -174,7 +176,28 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         data['Split'].map(lambda x: x.upper())
 
         if self.split != "ALL":
-            data = data[data["Split"] == self.split]
+            rng = np.random.default_rng(42)  # Use a fixed random seed for reproducibility
+            if self.split != "UNLABELLED":
+                data = data[data["Split"] == self.split]
+
+                indices = rng.choice(len(data), len(data), replace=False)
+                labelled_indices = indices[:int(len(indices) * self.percentage_dynamic_labelled / 100)]
+                data = data.iloc[labelled_indices]
+
+
+            else:
+                # Unlabelled data
+                splits = ["TRAIN", "VAL", "TEST"]
+                unlabelled_data = []
+                
+                for split in splits:
+                    split_data = data[data["Split"] == split]
+                    indices = rng.choice(len(split_data), len(split_data), replace=False)
+                    unlabelled_indices = indices[int(len(indices) * self.percentage_dynamic_labelled / 100):]
+                    unlabelled_data.append(split_data.iloc[unlabelled_indices])
+                
+                data = pd.concat(unlabelled_data)
+
 
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()

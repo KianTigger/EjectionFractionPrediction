@@ -137,83 +137,27 @@ def mean_and_std(data_dir, task, frames, period):
     
     return kwargs
 
-def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=100, percentage_pediatric_labelled=100):
+def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0]):
     # Set up datasets and dataloaders
     dataset = {}
 
-    pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, **kwargs)
-    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type,**kwargs)
-    pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type,**kwargs)
-    print("Pediatric train: ", len(pediatric_train))
+    pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
 
-    dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", **kwargs)
-    dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", **kwargs)
-    dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", **kwargs)
+    dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+    dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+    dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+    dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     print("Dynamic train: ", len(dynamic_train))
 
-    pediatric_train_loader = torch.utils.data.DataLoader(pediatric_train, batch_size=1)
-    pediatric_val_loader = torch.utils.data.DataLoader(pediatric_val, batch_size=1)
-    pediatric_test_loader = torch.utils.data.DataLoader(pediatric_test, batch_size=1)
-    print("1")
-
-    dynamic_train_loader = torch.utils.data.DataLoader(dynamic_train, batch_size=1)
-    dynamic_val_loader = torch.utils.data.DataLoader(dynamic_val, batch_size=1)
-    dynamic_test_loader = torch.utils.data.DataLoader(dynamic_test, batch_size=1)
-    print("2")
-
-    pediatric_train_list = [item for batch in pediatric_train_loader for item in batch]
-    print("3")
-    pediatric_val_list = [item for batch in pediatric_val_loader for item in batch]
-    print("3")
-    pediatric_test_list = [item for batch in pediatric_test_loader for item in batch]
-    print("3")
-
-    dynamic_train_list = [item for batch in dynamic_train_loader for item in batch]
-    print("4")
-    dynamic_val_list = [item for batch in dynamic_val_loader for item in batch]
-    print("4")
-    dynamic_test_list = [item for batch in dynamic_test_loader for item in batch]
-    print("4")
-
-
-
-    # pediatric_train_list = list(pediatric_train)
-    # pediatric_val_list = list(pediatric_val)
-    # print("Pediatric val list: ", len(pediatric_val_list))
-    # pediatric_test_list = list(pediatric_test)
-    # print("Pediatric test list: ", len(pediatric_test_list))
-
-    # dynamic_train_list = list(dynamic_train)
-    # dynamic_val_list = list(dynamic_val)
-    # dynamic_test_list = list(dynamic_test)
-    print("Dynamic train list: ", len(dynamic_train_list))
-
-    pediatric_train_labelled = random.sample(pediatric_train_list, int(len(pediatric_train_list) * percentage_pediatric_labelled / 100))
-    pediatric_val_labelled = random.sample(pediatric_val_list, int(len(pediatric_val_list) * percentage_pediatric_labelled / 100))
-    pediatric_test_labelled = random.sample(pediatric_test_list, int(len(pediatric_test_list) * percentage_pediatric_labelled / 100))
-    print("Pediatric labelled: ", len(pediatric_train_labelled) + len(pediatric_val_labelled) + len(pediatric_test_labelled))
-
-    dynamic_train_labelled = random.sample(dynamic_train_list, int(len(dynamic_train_list) * percentage_dynamic_labelled / 100))
-    dynamic_val_labelled = random.sample(dynamic_val_list, int(len(dynamic_val_list) * percentage_dynamic_labelled / 100))
-    dynamic_test_labelled = random.sample(dynamic_test_list, int(len(dynamic_test_list) * percentage_dynamic_labelled / 100))
-    print("Dynamic labelled: ", len(dynamic_train_labelled) + len(dynamic_val_labelled) + len(dynamic_test_labelled))
-
-    dataset["train"] = torch.utils.data.ConcatDataset(pediatric_train_labelled + dynamic_train_labelled)
-    dataset["val"] = torch.utils.data.ConcatDataset(pediatric_val_labelled + dynamic_val_labelled)
-    dataset["test"] = torch.utils.data.ConcatDataset(pediatric_test_labelled + dynamic_test_labelled)
+    dataset["train"] = torch.utils.data.ConcatDataset(pediatric_train + dynamic_train)
+    dataset["val"] = torch.utils.data.ConcatDataset(pediatric_val + dynamic_val)
+    dataset["test"] = torch.utils.data.ConcatDataset(pediatric_test + dynamic_test)
     print("Total labelled: ", len(dataset["train"]) + len(dataset["val"]) + len(dataset["test"]))
 
-    pediatric_train_unlabelled = list(set(pediatric_train_list) - set(pediatric_train_labelled))
-    pediatric_val_unlabelled = list(set(pediatric_val_list) - set(pediatric_val_labelled))
-    pediatric_test_unlabelled = list(set(pediatric_test_list) - set(pediatric_test_labelled))
-    print("Pediatric unlabelled: ", len(pediatric_train_unlabelled) + len(pediatric_val_unlabelled) + len(pediatric_test_unlabelled))
-
-    dynamic_train_unlabelled = list(set(dynamic_train_list) - set(dynamic_train_labelled))
-    dynamic_val_unlabelled = list(set(dynamic_val_list) - set(dynamic_val_labelled))
-    dynamic_test_unlabelled = list(set(dynamic_test_list) - set(dynamic_test_labelled))
-    print("Dynamic unlabelled: ", len(dynamic_train_unlabelled) + len(dynamic_val_unlabelled) + len(dynamic_test_unlabelled))
-
-    dataset["unlabelled"] = torch.utils.data.ConcatDataset(pediatric_train_unlabelled + pediatric_val_unlabelled + pediatric_test_unlabelled + dynamic_train_unlabelled + dynamic_val_unlabelled + dynamic_test_unlabelled)
+    dataset["unlabelled"] = torch.utils.data.ConcatDataset(pediatric_unlabel, dynamic_unlabel)
     print("Total unlabelled: ", len(dataset["unlabelled"]))
     
     return dataset

@@ -62,7 +62,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  length=16, period=2,
                  max_length=250,
                  clips=1,
-                 tvt_split=[0.7, 0.15, 0.15],
+                 tvtu_split=[0.7, 0.15, 0.15, 0], #train, val, test, unlabelled
                  createAllClips=False,
                  pad=None,
                  noise=None,
@@ -85,7 +85,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.max_length = max_length
         self.period = period
         self.clips = clips
-        self.tvt_split = tvt_split
+        self.tvtu_split = tvtu_split
         self.createAllClips = createAllClips
         self.pad = pad
         self.noise = noise
@@ -191,21 +191,24 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if self.split != "ALL":
             # data = data[data["Split"] == self.split]
 
-            train_split = self.tvt_split[0]
-            val_split = self.tvt_split[1]
-            test_split = self.tvt_split[2]
+            train_split = self.tvtu_split[0]
+            val_split = self.tvtu_split[1]
+            test_split = self.tvtu_split[2]
+            unlabelled_split = self.tvtu_split[3]
 
             # if they don't add up to 1, then normalize them
-            if train_split + val_split + test_split != 1:
-                train_split /= (train_split + val_split + test_split)
-                val_split /= (train_split + val_split + test_split)
-                test_split /= (train_split + val_split + test_split)
+            if train_split + val_split + test_split + unlabelled_split != 1:
+                train_split = train_split / (train_split + val_split + test_split + unlabelled_split)
+                val_split = val_split / (train_split + val_split + test_split + unlabelled_split)
+                test_split = test_split / (train_split + val_split + test_split + unlabelled_split)
+                unlabelled_split = unlabelled_split / (train_split + val_split + test_split + unlabelled_split)
 
-            # Split the data into 85% for TRAIN+VAL and 15% for TEST
-            train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
-
-            # Split the remaining TRAIN+VAL data into 70% for TRAIN and 15% for VAL (which is 82.35% of the original data)
-            train_data, val_data = train_test_split(train_val_data, test_size=(val_split / (1-test_split)), random_state=42)
+            # Split the data into UNLABEL+TRAIN+VAL TEST
+            unlabel_train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
+            # Split the data into UNLABEL+TRAIN VAL
+            unlabel_train_data, val_data = train_test_split(unlabel_train_val_data, test_size=(val_split / (1-test_split)), random_state=42)
+            # Split the data into UNLABEL TRAIN
+            unlabel_data, train_data = train_test_split(unlabel_train_data, test_size=(train_split / (1-(test_split+val_split))), random_state=42)
 
             if self.split == "TRAIN":
                 data = train_data
@@ -213,6 +216,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 data = val_data
             elif self.split == "TEST":
                 data = test_data
+            elif self.split == "UNLABEL":
+                data = unlabel_data
 
         self.header = data.columns.tolist()
 
