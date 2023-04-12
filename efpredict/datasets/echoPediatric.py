@@ -195,6 +195,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             val_split = self.tvt_split[1]
             test_split = self.tvt_split[2]
 
+            print("Splitting data into TRAIN, VAL, and TEST sets...")
+            print(f"TRAIN: {train_split}, VAL: {val_split}, TEST: {test_split}")
+
             # if they don't add up to 1, then normalize them
             if train_split + val_split + test_split != 1:
                 train_split /= (train_split + val_split + test_split)
