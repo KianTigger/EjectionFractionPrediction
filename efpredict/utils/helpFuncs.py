@@ -17,6 +17,7 @@ from torch.utils.data._utils.collate import default_collate
 
 def get_checkpoint(model, optim, scheduler, output, f):
     epoch_resume = 0
+    step_resume = 0
     bestLoss = float("inf")
     try:
         # Attempt to load checkpoint
