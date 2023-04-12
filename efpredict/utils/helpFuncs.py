@@ -158,7 +158,7 @@ def get_dataset(data_dir, num_train_patients, kwargs):
     #     dataset["train"] = torch.utils.data.Subset(dataset["train"], indices)
 
     dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
-    dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])#
+    dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])
     dataset["test"] = torch.utils.data.ConcatDataset([pediatric_test, dynamic_test])
 
     return dataset

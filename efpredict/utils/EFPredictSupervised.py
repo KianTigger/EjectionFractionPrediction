@@ -261,11 +261,12 @@ def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
 
         # Write full performance to file
         with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
-            for (filename, pred) in zip(ds.fnames, yhat):
-                if np.isscalar(pred) or isinstance(pred, (int, float)):  # check if pred is a single value
-                    pred = [pred]  # wrap it in a list to handle it properly
-                for (i, p) in enumerate(pred):
-                    g.write("{},{},{:.4f}\n".format(filename, i, p))
+            for ds_part in ds.datasets:  # Iterate through the datasets within the ConcatDataset
+                for (filename, pred) in zip(ds_part.fnames, yhat):
+                    if np.isscalar(pred) or isinstance(pred, (int, float)):  # check if pred is a single value
+                        pred = [pred]  # wrap it in a list to handle it properly
+                    for (i, p) in enumerate(pred):
+                        g.write("{},{},{:.4f}\n".format(filename, i, p))
         efpredict.utils.latexify()
         yhat = np.array(list(map(lambda x: x.mean(), yhat)))
 
