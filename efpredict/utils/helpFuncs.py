@@ -147,7 +147,7 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     if train_val_test_unlabel_split[3] != 0:
         pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     else:
-        pediatric_unlabel = pd.DataFrame()
+        pediatric_unlabel = None
 
     dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
@@ -155,7 +155,7 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     if percentage_dynamic_labelled != 100:
         dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
     else:
-        dynamic_unlabel = pd.DataFrame()
+        dynamic_unlabel = None
 
     dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
     dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])

@@ -127,7 +127,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
                     labelled_dataset, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
                 
                 unlabelled_dataloader = None
-                if phase == "train" and unlabelled_batch_size > 0:
+                if phase == "train" and unlabelled_batch_size > 0 and len(unlabelled_dataset) > 0:
                     unlabelled_dataloader = DataLoader(
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
