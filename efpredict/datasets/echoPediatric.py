@@ -209,8 +209,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         
         self.outcome = data.values.tolist()
 
-        print("self.outcome: ", self.outcome)
-
     def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
         data = None
 

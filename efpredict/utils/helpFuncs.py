@@ -142,7 +142,10 @@ def get_dataset(data_dir, num_train_patients, kwargs):
 
 
     pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", **kwargs)
-
+    # print first 5 patients
+    for i in range(5):
+        print(pediatric_train[i])
+    
     quit()
     pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", **kwargs)
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", **kwargs)
