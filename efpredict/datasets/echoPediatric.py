@@ -204,14 +204,13 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 train_split /= (train_split + val_split + test_split)
                 val_split /= (train_split + val_split + test_split)
                 test_split /= (train_split + val_split + test_split)
-            print(f"TRAIN: {train_split}, VAL: {val_split}, TEST: {test_split}")
             
 
             # Split the data into 85% for TRAIN+VAL and 15% for TEST
             train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
 
             # Split the remaining TRAIN+VAL data into 70% for TRAIN and 15% for VAL (which is 82.35% of the original data)
-            train_data, val_data = train_test_split(train_val_data, test_size=(val_split / 1-test_split), random_state=42)
+            train_data, val_data = train_test_split(train_val_data, test_size=(val_split / (1-test_split)), random_state=42)
 
             if self.split == "TRAIN":
                 data = train_data
