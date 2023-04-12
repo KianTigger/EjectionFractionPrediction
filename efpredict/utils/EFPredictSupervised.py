@@ -165,26 +165,26 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
 
     start_time = time.time()
 
-    # with torch.set_grad_enabled(train):
-    #     with tqdm.tqdm(total=len(dataloader)) as pbar:
-    #         for step, (X, outcome) in enumerate(dataloader):
-    #             step_resume = 200
-    #             if step_resume > 0 and step < step_resume:
-    #                 # Skip steps before step_resume
-    #                 print("Skipping step: ", step)
-    #                 pbar.update(1)
-    #                 continue
-    #             print("step: ", step)
-
     with torch.set_grad_enabled(train):
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            step_resume = 30
+            for step, (X, outcome) in enumerate(dataloader):
+                step_resume = 30
+                if step_resume > 0 and step < step_resume:
+                    # Skip steps before step_resume
+                    print("Skipping step: ", step)
+                    pbar.update(1)
+                    continue
+                print("step: ", step)
 
-            # Update the progress bar step_resume times
-            pbar.update(step_resume)
-            
-            for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
-            # for step, (X, outcome) in enumerate(dataloader):
+                # with torch.set_grad_enabled(train):
+                #     with tqdm.tqdm(total=len(dataloader)) as pbar:
+                #         step_resume = 30
+
+                #         # Update the progress bar step_resume times
+                #         pbar.update(step_resume)
+                        
+                #         for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
+                #         # for step, (X, outcome) in enumerate(dataloader):
 
                 print("here4")
 
