@@ -81,7 +81,7 @@ def run(
     # TODO Write docstrings, and explanations for args
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
 
-    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, percentage_pediatric_labelled)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled)
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
 
