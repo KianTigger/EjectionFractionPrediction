@@ -163,6 +163,8 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
     yhat = []
     y = []
 
+    start_time = time.time()
+
     # with torch.set_grad_enabled(train):
     #     with tqdm.tqdm(total=len(dataloader)) as pbar:
     #         for step, (X, outcome) in enumerate(dataloader):
@@ -185,6 +187,8 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
             # for step, (X, outcome) in enumerate(dataloader):
 
                 print("here4")
+
+                print("got here in {} seconds".format(time.time() - start_time))
          
                 if step % (int(len(dataloader)//10)) == 0:
                     print("step: ", step)
