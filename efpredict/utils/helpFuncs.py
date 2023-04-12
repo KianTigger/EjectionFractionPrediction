@@ -25,18 +25,20 @@ def get_checkpoint(model, optim, scheduler, output, f):
         optim.load_state_dict(checkpoint['opt_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_dict'])
         epoch_resume = checkpoint["epoch"] + 1
+        step_resume = checkpoint["step"] 
         bestLoss = checkpoint["best_loss"]
         f.write("Resuming from epoch {}\n".format(epoch_resume))
     except FileNotFoundError:
         f.write("Starting run from scratch\n")
     
-    return model, optim, scheduler, epoch_resume, bestLoss
+    return model, optim, scheduler, epoch_resume, step_resume, bestLoss
 
-def save_checkpoint(model, period, frames, epoch, output, loss, bestLoss, y, yhat, optim, scheduler):
+def save_checkpoint(model, period, frames, epoch, step, output, loss, bestLoss, y, yhat, optim, scheduler):
         #TODO change this to match original run.
         # Save checkpoint
         save = {
             'epoch': epoch,
+            'step': step,
             'state_dict': model.state_dict(),
             'period': period,
             'frames': frames,

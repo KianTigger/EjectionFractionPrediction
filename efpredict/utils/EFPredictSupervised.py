@@ -76,7 +76,7 @@ def run(
 
     while not success:
         try:
-            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset)
+            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, **kwargs)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
@@ -84,11 +84,11 @@ def run(
             else:
                 raise e
 
-def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset):
+def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, data_dir, run_test, **kwargs):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
 
-        model, optim, scheduler, epoch_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
+        model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
         if epoch_resume == 0:
             epoch_resume = 1
         for epoch in range(epoch_resume, num_epochs + 1):
@@ -102,7 +102,8 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
                 dataloader = torch.utils.data.DataLoader(
                     ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
 
-                loss, yhat, y = efpredict.utils.EFPredictSupervised.run_epoch(model, dataloader, phase == "train", optim, device)
+                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "bestLoss": bestLoss, "scheduler": scheduler}
+                loss, yhat, y = efpredict.utils.EFPredictSupervised.run_epoch(model, dataloader, phase == "train", optim, device, step_resume, checkpoint_args)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -116,7 +117,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
 
             scheduler.step()
 
-            bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, output, loss, bestLoss, y, yhat, optim, scheduler)
+            bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, y, yhat, optim, scheduler)
 
         # Load best weights
         if num_epochs != 0:
@@ -128,7 +129,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
         if run_test:
             test_resuls(f, output, model, data_dir, batch_size, num_workers, device, **kwargs)  
 
-def run_epoch(model, dataloader, train, optim, device, save_all=False, block_size=None):
+def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_args, save_all=False, block_size=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:
@@ -160,9 +161,20 @@ def run_epoch(model, dataloader, train, optim, device, save_all=False, block_siz
     print("dataloder: ", dataloader)
 
     with torch.set_grad_enabled(train):
-        #TODO check this doesn't stop 1 epoch short
         with tqdm.tqdm(total=len(dataloader)) as pbar:
-            for (X, outcome) in dataloader:
+            for step, (X, outcome) in enumerate(dataloader):
+                if step_resume > 0 and step < step_resume:
+                    # Skip steps before step_resume
+                    pbar.update(1)
+                    continue
+
+                if step % (int(len(dataloader)//10)) == 0:
+                    print("step: ", step)
+                    helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
+                            checkpoint_args["epoch"], checkpoint_args["output"], loss, 
+                            checkpoint_args["bestLoss"], y, yhat, optim, checkpoint_args["scheduler"])
+
+
                 y.append(outcome.numpy())
                 X = X.to(device)
                 outcome = outcome.to(device)
