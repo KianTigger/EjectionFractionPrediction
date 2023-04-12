@@ -30,7 +30,7 @@ setuptools.setup(
         "scikit-image",
         "tqdm",
         "sklearn",
-        "pillow",
+        "pillow"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
