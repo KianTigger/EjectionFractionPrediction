@@ -180,9 +180,6 @@ def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
         f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
         f.flush()
 
-        print("ds", ds)
-        print("dataset", dataset)
-
         # Write full performance to file
         with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
             for ds_part in ds.datasets:  # Iterate through the datasets within the ConcatDataset
