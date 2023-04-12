@@ -133,7 +133,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                     ED_Predictions = self.phase_values[name][0]
                     ES_Predictions = self.phase_values[name][1]
                 except KeyError:
-                    print(f"Warning: {name} has no ED or ES predictions!")
+                    # print(f"Warning: {name} has no ED or ES predictions!")
                     ED_Predictions = [0]
                     ES_Predictions = [self.length]
                     self.phase_values[name] = [ED_Predictions, ES_Predictions]

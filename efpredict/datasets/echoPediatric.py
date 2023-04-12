@@ -137,7 +137,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                         ED_Predictions = self.phase_values[name][0]
                         ES_Predictions = self.phase_values[name][1]
                     except KeyError:
-                        print(f"Warning: {name} has no ED or ES predictions!")
+                        # print(f"Warning: {name} has no ED or ES predictions!")
                         ED_Predictions = [0]
                         ES_Predictions = [self.length]
                         self.phase_values[name] = [ED_Predictions, ES_Predictions]
@@ -164,7 +164,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
                     if not written_line:
                         # TODO fix this, by generating the phase labels
-                        print(f"Warning: {name} has no ED or ES predictions!")
+                        # print(f"Warning: {name} has no ED or ES predictions!")
                         f.write(
                             f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
 
@@ -195,16 +195,11 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             val_split = self.tvt_split[1]
             test_split = self.tvt_split[2]
 
-            print("Splitting data into TRAIN, VAL, and TEST sets...")
-            print(f"TRAIN: {train_split}, VAL: {val_split}, TEST: {test_split}")
-
             # if they don't add up to 1, then normalize them
             if train_split + val_split + test_split != 1:
-                print("here 1")
                 train_split /= (train_split + val_split + test_split)
                 val_split /= (train_split + val_split + test_split)
                 test_split /= (train_split + val_split + test_split)
-            
 
             # Split the data into 85% for TRAIN+VAL and 15% for TEST
             train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
