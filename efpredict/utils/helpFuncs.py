@@ -152,9 +152,11 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     print("Dynamic train: ", len(dynamic_train))
 
     pediatric_train_list = list(pediatric_train)
-    pediatric_val_list = list(pediatric_val)
-    pediatric_test_list = list(pediatric_test)
     print("Pediatric train list: ", len(pediatric_train_list))
+    pediatric_val_list = list(pediatric_val)
+    print("Pediatric val list: ", len(pediatric_val_list))
+    pediatric_test_list = list(pediatric_test)
+    print("Pediatric test list: ", len(pediatric_test_list))
 
     dynamic_train_list = list(dynamic_train)
     dynamic_val_list = list(dynamic_val)
