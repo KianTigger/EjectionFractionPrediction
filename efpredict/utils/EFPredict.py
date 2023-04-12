@@ -39,6 +39,9 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--run_test", default=False, is_flag=True)
 @click.option("--labelled_ratio", type=int, default=10)
 @click.option("--unlabelled_ratio", type=int, default=1)
+@click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="ALL")
+@click.option("--percentage_dynamic_labelled", type=int, default=100)
+@click.option("--percentage_pediatric_labelled", type=int, default=100)
 
 def run(
     data_dir=None,
@@ -54,6 +57,10 @@ def run(
     # The current behavior is equivalent to passing `weights=R2Plus1D_18_Weights.KINETICS400_V1`. 
     # You can also use `weights=R2Plus1D_18_Weights.DEFAULT` to get the most up-to-date weights.
     weights=None,
+
+    data_type="ALL",
+    percentage_dynamic_labelled=100, 
+    percentage_pediatric_labelled=100,
 
     labelled_ratio=10,
     unlabelled_ratio=1,
@@ -74,7 +81,7 @@ def run(
     # TODO Write docstrings, and explanations for args
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
 
-    dataset = helpFuncs.get_dataset(data_dir, kwargs)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, percentage_pediatric_labelled)
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
 
@@ -83,7 +90,7 @@ def run(
     while not success:
         try:
             print("Starting training loop")
-            run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, num_workers, dataset, period, frames, run_test)
+            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, labelled_ratio, unlabelled_ratio)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
@@ -93,7 +100,7 @@ def run(
                 print("RuntimeError: {}".format(e))
                 print("Restarting...")
 
-def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, data_dir, run_test, labelled_ratio, unlabelled_ratio, kwargs):
+def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, labelled_ratio, unlabelled_ratio):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)

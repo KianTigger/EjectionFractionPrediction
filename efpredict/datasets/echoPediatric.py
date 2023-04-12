@@ -57,6 +57,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
     
     def __init__(self, root=None,
                  split="train", target_type="EF",
+                 data_type="ALL",
                  mean=0., std=1.,
                  length=16, period=2,
                  max_length=250,
@@ -77,6 +78,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if not isinstance(target_type, list):
             target_type = [target_type]
         self.target_type = target_type
+        self.data_type = data_type
         self.mean = mean
         self.std = std
         self.length = length
@@ -118,7 +120,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.get_phase_labels()
 
-        data = self.combined_df
+        data = self.dataset
 
         self.fnames = data["FileName"].tolist()
 
@@ -175,12 +177,16 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             self.dfpsax = pd.read_csv(f, index_col=False)
 
-        self.combined_df = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
-
+        if self.data_type == "A4C":
+            self.dataset = self.dfa4c
+        elif self.data_type == "PSAX":
+            self.dataset = self.dfpsax
+        else:
+            self.dataset = pd.concat([self.dfa4c, self.dfpsax]).reset_index(drop=True)
 
     def get_EF_Labels(self, filename="FileList.csv"):
 
-        data = self.combined_df
+        data = self.dataset
 
         if self.split != "ALL":
             # data = data[data["Split"] == self.split]
@@ -207,8 +213,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 data = val_data
             elif self.split == "TEST":
                 data = test_data
-        else:
-            data = data
 
         self.header = data.columns.tolist()
 
@@ -460,12 +464,12 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             video_path = os.path.join(
                 self.root, "ProcessedStrainStudyA4c", self.fnames[index])
         else:
-            if self.combined_df['FileName'].iloc[index] in os.listdir(os.path.join(self.root, "A4C", "Videos")):
+            if self.dataset['FileName'].iloc[index] in os.listdir(os.path.join(self.root, "A4C", "Videos")):
                 video_path = os.path.join(
-                    self.root, "A4C", "Videos", self.combined_df['FileName'].iloc[index])
+                    self.root, "A4C", "Videos", self.dataset['FileName'].iloc[index])
             else:
                 video_path = os.path.join(
-                    self.root, "PSAX", "Videos", self.combined_df['FileName'].iloc[index])
+                    self.root, "PSAX", "Videos", self.dataset['FileName'].iloc[index])
         
         return video_path
 
