@@ -41,7 +41,6 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--unlabelled_ratio", type=int, default=1)
 @click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="ALL")
 @click.option("--percentage_dynamic_labelled", type=int, default=100)
-@click.option("--percentage_pediatric_labelled", type=int, default=100)
 
 def run(
     data_dir=None,
