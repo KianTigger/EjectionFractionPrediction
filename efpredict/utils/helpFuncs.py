@@ -151,16 +151,25 @@ def get_dataset(data_dir, kwargs, data_type="ALL", percentage_dynamic_labelled=1
     dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", **kwargs)
     print("Dynamic train: ", len(dynamic_train))
 
-    pediatric_train_list = list(pediatric_train)
+    pediatric_train_list = [pediatric_train[i] for i in range(len(pediatric_train))]
     print("Pediatric train list: ", len(pediatric_train_list))
-    pediatric_val_list = list(pediatric_val)
-    print("Pediatric val list: ", len(pediatric_val_list))
-    pediatric_test_list = list(pediatric_test)
-    print("Pediatric test list: ", len(pediatric_test_list))
+    pediatric_val_list = [pediatric_val[i] for i in range(len(pediatric_val))]
+    pediatric_test_list = [pediatric_test[i] for i in range(len(pediatric_test))]
 
-    dynamic_train_list = list(dynamic_train)
-    dynamic_val_list = list(dynamic_val)
-    dynamic_test_list = list(dynamic_test)
+    dynamic_train_list = [dynamic_train[i] for i in range(len(dynamic_train))]
+    dynamic_val_list = [dynamic_val[i] for i in range(len(dynamic_val))]
+    dynamic_test_list = [dynamic_test[i] for i in range(len(dynamic_test))]
+
+
+    # pediatric_train_list = list(pediatric_train)
+    # pediatric_val_list = list(pediatric_val)
+    # print("Pediatric val list: ", len(pediatric_val_list))
+    # pediatric_test_list = list(pediatric_test)
+    # print("Pediatric test list: ", len(pediatric_test_list))
+
+    # dynamic_train_list = list(dynamic_train)
+    # dynamic_val_list = list(dynamic_val)
+    # dynamic_test_list = list(dynamic_test)
     print("Dynamic train list: ", len(dynamic_train_list))
 
     pediatric_train_labelled = random.sample(pediatric_train_list, int(len(pediatric_train_list) * percentage_pediatric_labelled / 100))
