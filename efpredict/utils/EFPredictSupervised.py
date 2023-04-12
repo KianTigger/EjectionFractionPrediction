@@ -163,35 +163,19 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
     yhat = []
     y = []
 
-    start_time = time.time()
+    num_items = len(dataloader)
 
     with torch.set_grad_enabled(train):
-        with tqdm.tqdm(total=len(dataloader)) as pbar:
+        if step_resume > 0:
+            print("Skipping {} steps".format(step_resume))
+        with tqdm.tqdm(total=num_items) as pbar:
             for step, (X, outcome) in enumerate(dataloader):
-                step_resume = 30
                 if step_resume > 0 and step < step_resume:
                     # Skip steps before step_resume
-                    print("Skipping step: ", step)
                     pbar.update(1)
                     continue
-                print("step: ", step)
 
-                # with torch.set_grad_enabled(train):
-                #     with tqdm.tqdm(total=len(dataloader)) as pbar:
-                #         step_resume = 30
-
-                #         # Update the progress bar step_resume times
-                #         pbar.update(step_resume)
-                        
-                #         for step, (X, outcome) in enumerate(itertools.islice(dataloader, step_resume, None)):
-                #         # for step, (X, outcome) in enumerate(dataloader):
-
-                print("here4")
-
-                print("got here in {} seconds".format(time.time() - start_time))
-         
-                if step % (int(len(dataloader)//10)) == 0:
-                    print("step: ", step)
+                if step % (int(num_items//10)) == 0:
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])

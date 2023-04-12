@@ -176,20 +176,23 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
     yhat = []
     y = []
 
+    num_items = len(labelled_dataloader)
+
     unlabelled_iterator = None
     if unlabelled_dataloader is not None:
         unlabelled_iterator = iter(unlabelled_dataloader)
 
     with torch.set_grad_enabled(train):
-        with tqdm.tqdm(total=len(labelled_dataloader)) as pbar:
+        if step_resume > 0:
+            print("Skipping {} steps".format(step_resume))
+        with tqdm.tqdm(total=num_items) as pbar:
             for step, (X, outcome) in enumerate(labelled_dataloader):
                 if step_resume > 0 and step < step_resume:
                     # Skip steps before step_resume
                     pbar.update(1)
                     continue
 
-                if step % (int(len(labelled_dataloader)//10)) == 0:
-                    print("step: ", step)
+                if step % (int(num_items//10)) == 0:
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
