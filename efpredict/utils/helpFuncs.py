@@ -25,7 +25,7 @@ def get_checkpoint(model, optim, scheduler, output, f):
         model.load_state_dict(checkpoint['state_dict'])
         optim.load_state_dict(checkpoint['opt_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_dict'])
-        epoch_resume = checkpoint["epoch"] + 1
+        epoch_resume = checkpoint["epoch"]
         step_resume = checkpoint["step"] 
         bestLoss = checkpoint["best_loss"]
         f.write("Resuming from epoch {}\n".format(epoch_resume))
