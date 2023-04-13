@@ -188,7 +188,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                     
                 print("x_batch shape:", len(X_batch))
                 print("x_batch shape[0]:", X_batch[0].shape)
-                print("x_batch shape[1]:", X_batch[1].shape)
+                print("x_batch shape[0][0]:", X_batch[0][0].shape)
                 print("outcome shape0:", outcome.shape)
                     
                 X = torch.stack(X_batch).to(device)
