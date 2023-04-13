@@ -141,38 +141,73 @@ def mean_and_std(data_dir, task, frames, period):
 def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0]):
     # Set up datasets and dataloaders
     dataset = {}
-    pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-    pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-    if train_val_test_unlabel_split[3] != 0:
-        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-    else:
-        pediatric_unlabel = None
+    pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel = get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split)
 
-    dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-    dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-    dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-    if percentage_dynamic_labelled != 100:
-        dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-    else:
-        dynamic_unlabel = None
+    dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel = get_dynamic(data_dir, kwargs, percentage_dynamic_labelled)
 
-    dataset["train"] = torch.utils.data.ConcatDataset([pediatric_train, dynamic_train])
-    dataset["val"] = torch.utils.data.ConcatDataset([pediatric_val, dynamic_val])
-    dataset["test"] = torch.utils.data.ConcatDataset([pediatric_test, dynamic_test])
-    print("Total labelled: ", len(dataset["train"]) + len(dataset["val"]) + len(dataset["test"]))
+    dataset["train"] = concat_dataset(pediatric_train, dynamic_train)
 
-    if pediatric_unlabel is not None and dynamic_unlabel is not None:
-        dataset["unlabelled"] = torch.utils.data.ConcatDataset([pediatric_unlabel, dynamic_unlabel])
-    elif pediatric_unlabel is not None:
-        dataset["unlabelled"] = pediatric_unlabel
-    elif dynamic_unlabel is not None:
-        dataset["unlabelled"] = dynamic_unlabel
-    else:
-        dataset["unlabelled"] = pd.DataFrame()
+    dataset["val"] = concat_dataset(pediatric_val, dynamic_val)
+
+    dataset["test"] = concat_dataset(pediatric_test, dynamic_test)
+    
+    dataset["unlabelled"] = concat_dataset(pediatric_unlabel, dynamic_unlabel)
+    
+    print("Total train: ", len(dataset["train"]))
+    print("Total val: ", len(dataset["val"]))
+    print("Total test: ", len(dataset["test"]))
     print("Total unlabelled: ", len(dataset["unlabelled"]))
     
     return dataset
+
+def concat_dataset(pediatric, dynamic):
+    if pediatric is not None and dynamic is not None:
+        return torch.utils.data.ConcatDataset([pediatric, dynamic])
+    elif pediatric is not None:
+        return pediatric
+    elif dynamic is not None:
+        return dynamic
+    else:
+        return pd.DataFrame()
+    
+def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
+    if train_val_test_unlabel_split[0] == 0:
+        pediatric_train = None
+        pediatric_val = None
+        pediatric_test = None
+        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
+    elif train_val_test_unlabel_split[0] == 1:
+        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
+        pediatric_val = None
+        pediatric_test = None
+        pediatric_unlabel = None
+    else:
+        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        if train_val_test_unlabel_split[3] != 0:
+            pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        else:
+            pediatric_unlabel = None
+
+    return pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel
+
+def get_dynamic(data_dir, kwargs, percentage_dynamic_labelled):
+    if percentage_dynamic_labelled == 0:
+        dynamic_train = None
+        dynamic_val = None
+        dynamic_test = None
+        dynamic_unlabel = None
+    else:    
+        dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+        dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+        if percentage_dynamic_labelled != 100:
+            dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+        else:
+            dynamic_unlabel = None
+
+    return dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel
 
 def get_unlabelled_dataset(data_dir):
     unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
