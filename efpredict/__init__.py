@@ -14,6 +14,11 @@ from efpredict.config import CONFIG as config
 import efpredict.datasets as datasets
 import efpredict.utils as utils
 
+import warnings
+from torch.utils.data import dataloader
+
+warnings.filterwarnings("ignore", category=UserWarning, module=dataloader.__name__)
+
 
 @click.group()
 def main():
@@ -24,8 +29,6 @@ del click
 
 
 main.add_command(utils.EFPredict.run)
-main.add_command(utils.EFPredictSupervised.run)
-# main.add_command(utils.EFPredictDPP.EFPredictDPP)
-# main.add_command(utils.EFPredictDPP.main) 
+main.add_command(utils.EFPredictSupervised.run) 
 
 __all__ = ["__version__", "config", "datasets", "main", "utils"]

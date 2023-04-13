@@ -156,6 +156,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
             model.load_state_dict(checkpoint['state_dict'])
             f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
             f.flush()
+            print("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
 
         if run_test:
             helpFuncs.test_resuls(f, output, model, dataset, batch_size, num_workers, device)  

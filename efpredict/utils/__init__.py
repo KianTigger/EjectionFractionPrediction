@@ -12,6 +12,11 @@ import numpy as np
 import torch
 import tqdm
 
+import warnings
+from torch.utils.data import dataloader
+
+warnings.filterwarnings("ignore", category=UserWarning, module=dataloader.__name__)
+
 from . import EFPredict, EFPredictSupervised
 
 
@@ -29,19 +34,12 @@ def loadvideo(filename: str, target_size=(112, 112)) -> np.ndarray:
         FileNotFoundError: Could not find `filename`
         ValueError: An error occurred while reading the video
     """
-    # if filename contains 0XB826FD24E4CBCD31,
-    if "0XB826FD24E4CBCD31" in filename:
-        print("Loading video: %s" % filename)
 
     if not os.path.exists(filename):
         raise FileNotFoundError(filename)
     capture = cv2.VideoCapture(filename)
-    if "0XB826FD24E4CBCD31" in filename:
-        print("capture loaded: %s" % capture)
 
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    if "0XB826FD24E4CBCD31" in filename:
-        print("frame_count: %s" % frame_count)
 
     v = []
 
