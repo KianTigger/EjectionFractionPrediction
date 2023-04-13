@@ -12,10 +12,10 @@ import numpy as np
 import torch
 import tqdm
 
-# import warnings
-# from torch.utils.data import dataloader
+import warnings
+from torch.utils.data import dataloader
 
-# warnings.filterwarnings("ignore", category=UserWarning, module=dataloader.__name__)
+warnings.filterwarnings("ignore", category=UserWarning, module=dataloader.__name__)
 
 from . import EFPredict, EFPredictSupervised
 

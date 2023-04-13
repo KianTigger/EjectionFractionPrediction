@@ -14,10 +14,10 @@ from efpredict.config import CONFIG as config
 import efpredict.datasets as datasets
 import efpredict.utils as utils
 
-# import warnings
-# from torch.utils.data import dataloader
+import warnings
+from torch.utils.data import dataloader
 
-# warnings.filterwarnings("ignore", category=UserWarning, module=dataloader.__name__)
+warnings.filterwarnings("ignore", category=UserWarning, module=dataloader.__name__)
 
 
 @click.group()

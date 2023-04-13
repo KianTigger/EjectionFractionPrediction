@@ -43,8 +43,6 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--percentage_dynamic_labelled", type=int, default=100)
 @click.option("--train_val_test_unlabel_split", type=str, default="0.7,0.15,0.15,0")
 
-def process_split_string(value):
-    return [float(x) for x in value.split(',')]
 
 def run(
     data_dir=None,
@@ -110,6 +108,10 @@ def run(
                 # raise e
                 print("RuntimeError: {}".format(e))
                 print("Restarting...")
+
+
+def process_split_string(value):
+    return [float(x) for x in value.split(',')]
 
 def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, labelled_ratio, unlabelled_ratio):
     # Run training and testing loops
