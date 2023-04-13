@@ -90,7 +90,11 @@ def run(
 
     dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split)
 
-    output, device, model, optim, scheduler = helpFuncs.setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio, unlabelled_ratio)
+    output, device, model, optim, scheduler = helpFuncs.setup_model(seed, 
+            model_name, pretrained, device, weights, frames, 
+            period, output, weight_decay, lr, lr_step_period, 
+            num_epochs, labelled_ratio, unlabelled_ratio, 
+            data_type, percentage_dynamic_labelled, train_val_test_unlabel_split)
 
     success = False
 

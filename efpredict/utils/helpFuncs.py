@@ -78,7 +78,10 @@ def generate_model(model_name, pretrained):
         print("Using random weights")
     return model
 
-def setup_model(seed, model_name, pretrained, device, weights, frames, period, output, weight_decay, lr, lr_step_period, num_epochs, labelled_ratio=False, unlabelled_ratio=False):
+def setup_model(seed, model_name, pretrained, device, weights, frames, 
+                period, output, weight_decay, lr, lr_step_period, 
+                num_epochs, labelled_ratio=False, unlabelled_ratio=False,
+                data_type=None, percentage_dynamic_labelled=None, train_val_test_unlabel_split=None):
     # Seed RNGs
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -92,6 +95,12 @@ def setup_model(seed, model_name, pretrained, device, weights, frames, period, o
             output_dir += f"semisupervised/ratioLU-{labelled_ratio}-{unlabelled_ratio}/"
         else:
             output_dir += "supervised/"
+        if data_type != None:
+            output_dir += f"{data_type}/"
+        if percentage_dynamic_labelled != None:
+            output_dir += f"percentageDynamicLabelled-{percentage_dynamic_labelled}/"
+        if train_val_test_unlabel_split != None:
+            output_dir += f"trainValTestUnlabelSplit-{train_val_test_unlabel_split}/"
         output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
 
     os.makedirs(output, exist_ok=True)
@@ -175,7 +184,10 @@ def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
         pediatric_train = None
         pediatric_val = None
         pediatric_test = None
-        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
+        if train_val_test_unlabel_split[3] == 1:
+            pediatric_unlabel = None
+        else:
+            pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
     elif train_val_test_unlabel_split[0] == 1:
         pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
         pediatric_val = None
