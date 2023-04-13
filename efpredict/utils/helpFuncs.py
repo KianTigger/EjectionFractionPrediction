@@ -181,9 +181,9 @@ def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
         pediatric_val = None
         pediatric_test = None
         if train_val_test_unlabel_split[3] == 1:
-            pediatric_unlabel = None
-        else:
             pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
+        else:
+            pediatric_unlabel = None
     elif train_val_test_unlabel_split[0] == 1:
         pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
         pediatric_val = None
