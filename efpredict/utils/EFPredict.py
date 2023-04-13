@@ -234,68 +234,71 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
 
-                y.append(outcome.numpy())
-                outcome = outcome.to(device)
-                for idx, X in enumerate(X_batch):
-                    X = X.to(device)
-                    current_outcome = outcome[idx].unsqueeze(0)
-                    current_outcome = current_outcome.to(device)
+                X = torch.stack(X_batch).to(device)
 
-                    average = (len(X.shape) == 6)
-                    if average:
-                        batch, n_clips, c, f, h, w = X.shape
-                        X = X.view(-1, c, f, h, w)
+                duplicated_outcome = np.repeat(outcome, len(X_batch))
+                y.append(duplicated_outcome)
 
-                    s1 += current_outcome.sum()
-                    s2 += (current_outcome ** 2).sum()
+                outcome = duplicated_outcome.to(device)
 
-                    if block_size is None:
-                        outputs = model(X)
-                    else:
-                        outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+                # if len is 6 that means we have a batch of clips
+                average = (len(X.shape) == 6)
+                if average:
+                    batch, n_clips, c, f, h, w = X.shape
+                    X = X.view(-1, c, f, h, w)
+                
+                s1 += outcome.sum()
+                s2 += (outcome ** 2).sum()
 
+                #TODO make it create clips around generated systole and diastole frames.
+                if block_size is None:
+                    outputs = model(X)
+                else:
+                    outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+
+                if save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                    if average:
-                        outputs = outputs.view(batch, n_clips, -1).mean(1)
+                if not save_all:
+                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                    loss = torch.nn.functional.mse_loss(outputs.view(-1), current_outcome)
+                loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
-                    if train and (unlabelled_dataloader is not None):
+                if train and (unlabelled_dataloader is not None):
+                    
+                    # Sample a batch from the unlabelled dataset
+                    try:
+                        unlabelled_X, _ = next(unlabelled_iterator)
+                    except StopIteration:
+                        unlabelled_iterator = iter(unlabelled_dataloader)
+                        unlabelled_X, _ = next(unlabelled_iterator)
+
+                    if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
+                        unlabelled_X = unlabelled_X.to(device)
                         
-                        # Sample a batch from the unlabelled dataset
-                        try:
-                            unlabelled_X, _ = next(unlabelled_iterator)
-                        except StopIteration:
-                            unlabelled_iterator = iter(unlabelled_dataloader)
-                            unlabelled_X, _ = next(unlabelled_iterator)
+                        # Compute consistency loss between labelled and unlabelled data
+                        unlabelled_outputs = model(unlabelled_X)
+                        size_diff = outputs.size(0) - unlabelled_outputs.size(0)
 
-                        if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
-                            unlabelled_X = unlabelled_X.to(device)
-                            
-                            # Compute consistency loss between labelled and unlabelled data
-                            unlabelled_outputs = model(unlabelled_X)
-                            size_diff = outputs.size(0) - unlabelled_outputs.size(0)
+                        # Pad the smaller tensor with zeros
+                        if size_diff > 0:
+                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
+                            unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
+                        elif size_diff < 0:
+                            padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
+                            outputs = torch.cat((outputs, padding), dim=0)
 
-                            # Pad the smaller tensor with zeros
-                            if size_diff > 0:
-                                padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
-                                unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
-                            elif size_diff < 0:
-                                padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
-                                outputs = torch.cat((outputs, padding), dim=0)
+                        consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+                        # Add consistency loss to the original loss
+                        loss += consistency_loss
 
-                            consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-                            # Add consistency loss to the original loss
-                            loss += consistency_loss
-
-                    if train:
-                        optim.zero_grad()
-                        loss.backward()
-                        optim.step()
-                 
-                    total += loss.item() * X.size(0)
-                    n += X.size(0)
+                if train:
+                    optim.zero_grad()
+                    loss.backward()
+                    optim.step()
+                
+                total += loss.item() * X.size(0)
+                n += X.size(0)
                  
                 pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
                 pbar.update()
