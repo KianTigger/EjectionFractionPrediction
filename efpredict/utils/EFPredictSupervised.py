@@ -186,33 +186,21 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
                     
-                print("x_batch shape:", len(X_batch))
-                print("x_batch shape[0]:", X_batch[0].shape)
-                print("x_batch shape[0][0]:", X_batch[0][0].shape)
-                print("outcome shape0:", outcome.shape)
-                    
                 X = torch.stack(X_batch).to(device)
-
-                print("X shape:", X.shape)
 
                 duplicated_outcome = np.repeat(outcome, len(X_batch))
                 y.append(duplicated_outcome)
 
                 outcome = duplicated_outcome.to(device)
 
-                # outcome = torch.tensor(duplicated_outcome, device=device)
-
+                # if len is 6 that means we have a batch of clips
                 average = (len(X.shape) == 6)
                 if average:
                     batch, n_clips, c, f, h, w = X.shape
                     X = X.view(-1, c, f, h, w)
                 
-                print("X shape1:", X.shape)
-
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
-
-                print("outcome shape1:", outcome.shape)
 
                 #TODO make it create clips around generated systole and diastole frames.
                 if block_size is None:
@@ -220,20 +208,11 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 else:
                     outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
 
-                print("outputs shape2:", outputs.shape)
-                print("outcome shape2:", outcome.shape)
-
                 if save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                # if average:
-                #     outputs = outputs.view(batch, n_clips, -1).mean(1)
-
                 if not save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
-
-                print("outputs shape3:", outputs.shape)
-                print("outcome shape3:", outcome.shape)                    
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
