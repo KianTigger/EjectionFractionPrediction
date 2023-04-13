@@ -226,8 +226,8 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 if save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                if average:
-                    outputs = outputs.view(batch, n_clips, -1).mean(1)
+                # if average:
+                #     outputs = outputs.view(batch, n_clips, -1).mean(1)
 
                 if not save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
