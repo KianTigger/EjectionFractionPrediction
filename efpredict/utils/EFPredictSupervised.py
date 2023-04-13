@@ -129,7 +129,10 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
 
         # Load best weights
         if num_epochs != 0:
-            checkpoint = torch.load(os.path.join(output, "best.pt"))
+            try:
+                checkpoint = torch.load(os.path.join(output, "best.pt"))
+            except FileNotFoundError:
+                checkpoint = torch.load(os.path.join(output, "checkpoint.pt")) 
             model.load_state_dict(checkpoint['state_dict'])
             f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
             f.flush()
