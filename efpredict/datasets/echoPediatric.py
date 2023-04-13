@@ -64,7 +64,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  max_length=250,
                  clips=1,
                  tvtu_split=[0.7, 0.15, 0.15, 0], #train, val, test, unlabelled
-                 num_augmented_videos=0,
+                 num_augmented_videos=1,
                  createAllClips=False,
                  pad=None,
                  noise=None,
