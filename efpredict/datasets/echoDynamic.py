@@ -65,7 +65,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  length=16, period=2,
                  max_length=250,
                  percentage_dynamic_labelled=100,
-                 num_augmented_videos=1,
+                 num_augmented_videos=0,
                  clips=1,
                  createAllClips=False,
                  pad=None,
