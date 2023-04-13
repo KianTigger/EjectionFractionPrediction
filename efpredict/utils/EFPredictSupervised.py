@@ -192,6 +192,9 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 print("outcome shape0:", outcome.shape)
                     
                 X = torch.stack(X_batch).to(device)
+
+                print("X shape:", X.shape)
+
                 duplicated_outcome = np.repeat(outcome, len(X_batch))
                 y.append(duplicated_outcome)
 
@@ -203,6 +206,8 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 if average:
                     batch, n_clips, c, f, h, w = X.shape
                     X = X.view(-1, c, f, h, w)
+                
+                print("X shape1:", X.shape)
 
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
