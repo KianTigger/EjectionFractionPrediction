@@ -192,7 +192,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 print("outcome shape0:", outcome.shape)
                     
                 X = torch.stack(X_batch).to(device)
-                outcome_lengths = [x.shape[0] for x in X_batch]
+                outcome_lengths = X_batch[0].shape[0]
                 duplicated_outcome = np.repeat(outcome, outcome_lengths)
                 y.append(duplicated_outcome)
 
