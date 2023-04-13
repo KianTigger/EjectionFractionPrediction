@@ -57,7 +57,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
     
     def __init__(self, root=None,
                  split="train", target_type="EF",
-                 data_type="ALL",
+                 data_type="A4C",
                  mean=0., std=1.,
                  length=16, period=2,
                  max_length=250,
@@ -177,6 +177,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             self.dfpsax = pd.read_csv(f, index_col=False)
 
+        print("self.data_type: ", self.data_type)
+
         if self.data_type == "A4C":
             self.dataset = self.dfa4c
         elif self.data_type == "PSAX":
@@ -251,7 +253,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                     data = pd.read_csv(f)
 
             except FileNotFoundError:
-                print("No phase information found. Will generate phase information.")
+                print("No phase information found. TODO Will generate phase information.")
                 # TODO, generate phase information from here
 
         if data is not None:

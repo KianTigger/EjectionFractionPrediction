@@ -222,7 +222,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                     data = pd.read_csv(f)
 
             except FileNotFoundError:
-                print("No phase information found. Will generate phase information.")
+                print("No phase information found. TODO Will generate phase information.")
                 # TODO, generate phase information from here
 
         if data is not None:
