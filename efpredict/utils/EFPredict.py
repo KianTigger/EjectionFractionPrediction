@@ -41,6 +41,10 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--unlabelled_ratio", type=int, default=1)
 @click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="A4C")
 @click.option("--percentage_dynamic_labelled", type=int, default=100)
+@click.option("--train_val_test_unlabel_split", type=str, default="0.7,0.15,0.15,0")
+
+def process_split_string(value):
+    return [float(x) for x in value.split(',')]
 
 def run(
     data_dir=None,
@@ -79,6 +83,10 @@ def run(
 ):
     # TODO Write docstrings, and explanations for args
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
+
+    # if train_val_test_unlabel_split is a string, convert to list
+    if isinstance(train_val_test_unlabel_split, str):
+        train_val_test_unlabel_split = process_split_string(train_val_test_unlabel_split)
 
     dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split)
 
