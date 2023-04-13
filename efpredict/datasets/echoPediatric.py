@@ -340,7 +340,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         videos = [video]
         rotation_angles = random.sample([90, 180, 270], self.num_augmented_videos)
         for rotation_angle in rotation_angles:
-            rotated_video = np.rot90(video, k=rotation_angle // 90, axes=(1, 2))
+            rotated_video = np.rot90(video, k=rotation_angle // 90, axes=(1, 2)).copy()
             videos.append(rotated_video)
 
         return videos, target
