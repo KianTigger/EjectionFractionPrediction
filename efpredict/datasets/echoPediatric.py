@@ -177,8 +177,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, 'PSAX', filename)) as f:
             self.dfpsax = pd.read_csv(f, index_col=False)
 
-        print("self.data_type: ", self.data_type)
-
         if self.data_type == "A4C":
             self.dataset = self.dfa4c
         elif self.data_type == "PSAX":
