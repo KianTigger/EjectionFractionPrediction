@@ -192,9 +192,6 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 y.append(duplicated_outcome)
                 outcome = torch.tensor(duplicated_outcome, device=device)
 
-                # X = X.to(device)
-                # outcome = outcome.to(device)
-
                 average = (len(X.shape) == 6)
                 if average:
                     batch, n_clips, c, f, h, w = X.shape
@@ -203,8 +200,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
 
-                print("outputs shape1:", outputs.shape)
-                print("outcome shape2:", outcome.shape)
+                print("outcome shape1:", outcome.shape)
 
                 #TODO make it create clips around generated systole and diastole frames.
                 if block_size is None:
