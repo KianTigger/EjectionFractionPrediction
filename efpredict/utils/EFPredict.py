@@ -220,7 +220,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
         if step_resume > 0:
             print("Skipping {} steps".format(step_resume))
         with tqdm.tqdm(total=num_items) as pbar:
-            for step, (X_batch, outcome) in enumerate(dataloader):
+            for step, (X_batch, outcome) in enumerate(labelled_dataloader):
                 if step_resume > 0 and step < step_resume:
                     # Skip steps before step_resume
                     pbar.update(1)
