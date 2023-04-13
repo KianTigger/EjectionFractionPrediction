@@ -304,7 +304,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         # Create rotated videos
         videos = [video]
-        rotation_angles = random.sample([90, 180, 270], self.num_rotated_videos)
+        rotation_angles = random.sample([90, 180, 270], self.num_augmented_videos)
         for rotation_angle in rotation_angles:
             rotated_video = np.rot90(video, k=rotation_angle // 90, axes=(1, 2))
             videos.append(rotated_video)
