@@ -9,6 +9,7 @@
 
 import os
 import collections
+import random
 import pandas as pd
 
 import numpy as np
@@ -64,6 +65,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  length=16, period=2,
                  max_length=250,
                  percentage_dynamic_labelled=100,
+                 num_augmented_videos=1,
                  clips=1,
                  createAllClips=False,
                  pad=None,
@@ -81,6 +83,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             target_type = [target_type]
         self.target_type = target_type
         self.percentage_dynamic_labelled = percentage_dynamic_labelled
+        self.num_augmented_videos = num_augmented_videos
         self.mean = mean
         self.std = std
         self.length = length
@@ -299,7 +302,14 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         if self.pad is not None:
             video = self.pad_video(video)
 
-        return video, target
+        # Create rotated videos
+        videos = [video]
+        rotation_angles = random.sample([90, 180, 270], self.num_rotated_videos)
+        for rotation_angle in rotation_angles:
+            rotated_video = np.rot90(video, k=rotation_angle // 90, axes=(1, 2))
+            videos.append(rotated_video)
+
+        return videos, target
 
     def set_length(self, video):
         c, f, h, w = video.shape

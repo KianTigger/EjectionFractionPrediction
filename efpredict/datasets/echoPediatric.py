@@ -9,6 +9,7 @@
 
 import os
 import collections
+import random
 import pandas as pd
 
 import numpy as np
@@ -63,6 +64,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  max_length=250,
                  clips=1,
                  tvtu_split=[0.7, 0.15, 0.15, 0], #train, val, test, unlabelled
+                 num_augmented_videos=1,
                  createAllClips=False,
                  pad=None,
                  noise=None,
@@ -86,6 +88,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.period = period
         self.clips = clips
         self.tvtu_split = tvtu_split
+        self.num_augmented_videos = num_augmented_videos
         self.createAllClips = createAllClips
         self.pad = pad
         self.noise = noise
@@ -227,7 +230,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                     data = test_data
                 elif self.split == "UNLABEL":
                     data = unlabel_data
-                    
+
             elif not all(val > 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
                 raise ValueError("All values in tvtu_split except for tvtu_split[3] must be greater than 0")
 
@@ -333,7 +336,14 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if self.pad is not None:
             video = self.pad_video(video)
 
-        return video, target
+        # Create rotated videos
+        videos = [video]
+        rotation_angles = random.sample([90, 180, 270], self.num_rotated_videos)
+        for rotation_angle in rotation_angles:
+            rotated_video = np.rot90(video, k=rotation_angle // 90, axes=(1, 2))
+            videos.append(rotated_video)
+
+        return videos, target
 
     def set_length(self, video):
         c, f, h, w = video.shape
