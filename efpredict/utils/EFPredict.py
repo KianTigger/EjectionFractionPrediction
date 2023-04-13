@@ -39,7 +39,7 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--run_test", default=False, is_flag=True)
 @click.option("--labelled_ratio", type=int, default=10)
 @click.option("--unlabelled_ratio", type=int, default=1)
-@click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="ALL")
+@click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="A4C")
 @click.option("--percentage_dynamic_labelled", type=int, default=100)
 
 def run(
@@ -57,7 +57,7 @@ def run(
     # You can also use `weights=R2Plus1D_18_Weights.DEFAULT` to get the most up-to-date weights.
     weights=None,
 
-    data_type="ALL",
+    data_type="A4C",
     percentage_dynamic_labelled=100, 
     train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0],
 
