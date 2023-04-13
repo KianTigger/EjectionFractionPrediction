@@ -238,9 +238,12 @@ def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
         f.write("{} (one clip) RMSE: {:.2f} ({:.2f} - {:.2f})\n".format(split, *tuple(map(math.sqrt, efpredict.utils.bootstrap(y, yhat, sklearn.metrics.mean_squared_error)))))
         f.flush()
 
+        # check if ds.datasets exists, if so, set datasets to ds.datasets, if not set datasets to [ds]
+        datasets = ds.datasets if hasattr(ds, "datasets") else [ds]
+
         # Write full performance to file
         with open(os.path.join(output, "{}_predictions.csv".format(split)), "w") as g:
-            for ds_part in ds.datasets:  # Iterate through the datasets within the ConcatDataset
+            for ds_part in datasets:  # Iterate through the datasets within the ConcatDataset
                 for (filename, pred) in zip(ds_part.fnames, yhat):
                     if np.isscalar(pred) or isinstance(pred, (int, float)):  # check if pred is a single value
                         pred = [pred]  # wrap it in a list to handle it properly

@@ -29,6 +29,6 @@ del click
 
 
 main.add_command(utils.EFPredict.run)
-main.add_command(utils.EFPredictSupervised.run) 
+main.add_command(utils.EFPredictSupervised.run)
 
 __all__ = ["__version__", "config", "datasets", "main", "utils"]
