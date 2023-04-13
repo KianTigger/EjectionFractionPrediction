@@ -189,6 +189,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 for idx, X in enumerate(X_batch):
                     X = X.to(device)
                     current_outcome = outcome[idx].unsqueeze(0)
+                    current_outcome = current_outcome.to(device)
 
                     average = (len(X.shape) == 6)
                     if average:
