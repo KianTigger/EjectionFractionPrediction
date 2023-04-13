@@ -172,7 +172,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
         if step_resume > 0:
             print("Skipping {} steps".format(step_resume))
         with tqdm.tqdm(total=num_items) as pbar:
-            for step, (X, outcome) in enumerate(dataloader):
+            for step, (X_batch, outcome) in enumerate(dataloader):
                 if step_resume > 0 and step < step_resume:
                     # Skip steps before step_resume
                     pbar.update(1)
@@ -185,41 +185,43 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
 
 
                 y.append(outcome.numpy())
-                X = X.to(device)
                 outcome = outcome.to(device)
+                for idx, X in enumerate(X_batch):
+                    X = X.to(device)
+                    current_outcome = outcome[idx].unsqueeze(0)
 
-                average = (len(X.shape) == 6)
-                if average:
-                    batch, n_clips, c, f, h, w = X.shape
-                    X = X.view(-1, c, f, h, w)
+                    average = (len(X.shape) == 6)
+                    if average:
+                        batch, n_clips, c, f, h, w = X.shape
+                        X = X.view(-1, c, f, h, w)
 
-                s1 += outcome.sum()
-                s2 += (outcome ** 2).sum()
+                    s1 += current_outcome.sum()
+                    s2 += (current_outcome ** 2).sum()
 
-                #TODO make it create clips around generated systole and diastole frames.
-                if block_size is None:
-                    outputs = model(X)
-                else:
-                    outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+                    #TODO make it create clips around generated systole and diastole frames.
+                    if block_size is None:
+                        outputs = model(X)
+                    else:
+                        outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
 
-                if save_all:
-                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
+                    if save_all:
+                        yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                if average:
-                    outputs = outputs.view(batch, n_clips, -1).mean(1)
+                    if average:
+                        outputs = outputs.view(batch, n_clips, -1).mean(1)
 
-                if not save_all:
-                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
+                    if not save_all:
+                        yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
+                    loss = torch.nn.functional.mse_loss(outputs.view(-1), current_outcome)
 
-                if train:
-                    optim.zero_grad()
-                    loss.backward()
-                    optim.step()
+                    if train:
+                        optim.zero_grad()
+                        loss.backward()
+                        optim.step()
 
-                total += loss.item() * X.size(0)
-                n += X.size(0)
+                    total += loss.item() * X.size(0)
+                    n += X.size(0)
 
                 pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
                 pbar.update()
