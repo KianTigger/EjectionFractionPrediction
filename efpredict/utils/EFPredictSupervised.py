@@ -186,11 +186,19 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
                     
+                print("x_batch shape:", X_batch.shape)
+                print("x_batch shape[0]:", X_batch[0].shape)
+                print("x_batch shape[1]:", X_batch[1].shape)
+                print("outcome shape0:", outcome.shape)
+                    
                 X = torch.stack(X_batch).to(device)
                 outcome_lengths = [x.shape[0] for x in X_batch]
                 duplicated_outcome = np.repeat(outcome, outcome_lengths)
                 y.append(duplicated_outcome)
-                outcome = torch.tensor(duplicated_outcome, device=device)
+
+                outcome = duplicated_outcome.to(device)
+
+                # outcome = torch.tensor(duplicated_outcome, device=device)
 
                 average = (len(X.shape) == 6)
                 if average:
