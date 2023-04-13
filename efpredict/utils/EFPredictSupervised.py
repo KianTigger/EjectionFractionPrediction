@@ -190,7 +190,7 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 outcome_lengths = [x.shape[0] for x in X_batch]
                 duplicated_outcome = np.repeat(outcome, outcome_lengths)
                 y.append(duplicated_outcome)
-                outcome = torch.tensor(duplicated_outcome).to(device)
+                outcome = torch.tensor(duplicated_outcome, device=device)
 
                 # X = X.to(device)
                 # outcome = outcome.to(device)
@@ -203,11 +203,17 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                 s1 += outcome.sum()
                 s2 += (outcome ** 2).sum()
 
+                print("outputs shape1:", outputs.shape)
+                print("outcome shape2:", outcome.shape)
+
                 #TODO make it create clips around generated systole and diastole frames.
                 if block_size is None:
                     outputs = model(X)
                 else:
                     outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+
+                print("outputs shape2:", outputs.shape)
+                print("outcome shape2:", outcome.shape)
 
                 if save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
@@ -217,6 +223,9 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
 
                 if not save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
+
+                print("outputs shape3:", outputs.shape)
+                print("outcome shape3:", outcome.shape)                    
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
