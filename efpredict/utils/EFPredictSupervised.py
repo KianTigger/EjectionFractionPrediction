@@ -132,7 +132,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
             try:
                 checkpoint = torch.load(os.path.join(output, "best.pt"))
             except FileNotFoundError:
-                checkpoint = torch.load(os.path.join(output, "checkpoint.pt")) 
+                checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
             model.load_state_dict(checkpoint['state_dict'])
             f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
             f.flush()
@@ -185,42 +185,48 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                     helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
                             checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
                             checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
-
-
+                    
+                X = torch.stack(X_batch).to(device)
+                outcome_lengths = [x.shape[0] for x in X_batch]
+                outcome = np.repeat(outcome, outcome_lengths)
                 y.append(outcome.numpy())
-                outcome = outcome.to(device)
-                for idx, X in enumerate(X_batch):
-                    X = X.to(device)
-                    current_outcome = outcome[idx].unsqueeze(0)
-                    current_outcome = current_outcome.to(device)
+                outcome = torch.tensor(outcome).to(device)
 
-                    average = (len(X.shape) == 6)
-                    if average:
-                        batch, n_clips, c, f, h, w = X.shape
-                        X = X.view(-1, c, f, h, w)
+                # X = X.to(device)
+                # outcome = outcome.to(device)
 
-                    s1 += current_outcome.sum()
-                    s2 += (current_outcome ** 2).sum()
+                average = (len(X.shape) == 6)
+                if average:
+                    batch, n_clips, c, f, h, w = X.shape
+                    X = X.view(-1, c, f, h, w)
 
-                    if block_size is None:
-                        outputs = model(X)
-                    else:
-                        outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+                s1 += outcome.sum()
+                s2 += (outcome ** 2).sum()
 
+                #TODO make it create clips around generated systole and diastole frames.
+                if block_size is None:
+                    outputs = model(X)
+                else:
+                    outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
+
+                if save_all:
                     yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                    if average:
-                        outputs = outputs.view(batch, n_clips, -1).mean(1)
+                if average:
+                    outputs = outputs.view(batch, n_clips, -1).mean(1)
 
-                    loss = torch.nn.functional.mse_loss(outputs.view(-1), current_outcome)
+                if not save_all:
+                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                    if train:
-                        optim.zero_grad()
-                        loss.backward()
-                        optim.step()
+                loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
-                    total += loss.item() * X.size(0)
-                    n += X.size(0)
+                if train:
+                    optim.zero_grad()
+                    loss.backward()
+                    optim.step()
+
+                total += loss.item() * X.size(0)
+                n += X.size(0)
 
                 pbar.set_postfix_str("{:.2f} ({:.2f}) / {:.2f}".format(total / n, loss.item(), s2 / n - (s1 / n) ** 2))
                 pbar.update()
