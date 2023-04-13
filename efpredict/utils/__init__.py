@@ -94,11 +94,12 @@ def get_mean_and_std(dataset: torch.utils.data.Dataset,
     n = 0  # number of elements taken (should be equal to samples by end of for loop)
     s1 = 0.  # sum of elements along channels (ends up as np.array of dimension (channels,))
     s2 = 0.  # sum of squares of elements along channels (ends up as np.array of dimension (channels,))
-    for (x, *_) in tqdm.tqdm(dataloader):
-        x = x.transpose(0, 1).contiguous().view(3, -1)
-        n += x.shape[1]
-        s1 += torch.sum(x, dim=1).numpy()
-        s2 += torch.sum(x ** 2, dim=1).numpy()
+    for (batch_videos, *_) in tqdm.tqdm(dataloader):
+        for video in batch_videos:
+            x = video.transpose(0, 1).contiguous().view(3, -1)
+            n += x.shape[1]
+            s1 += torch.sum(x, dim=1).numpy()
+            s2 += torch.sum(x ** 2, dim=1).numpy()
     mean = s1 / n  # type: np.ndarray
     std = np.sqrt(s2 / n - mean ** 2)  # type: np.ndarray
 
