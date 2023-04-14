@@ -204,23 +204,21 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 raise ValueError("Invalid split")
             print("Split to use: ", split_to_use)
             if split_to_use == 0.0 or split_to_use < 0.0 or split_to_use > 1.0:
-                print("Split to use is 0.0 or less than 0.0 or greater than 1.0")
                 data = None
-                
+                return None
             elif split_to_use < 1:
                 data = train_test_split(data, test_size=1 - split_to_use, random_state=42)[0]
 
-        if data is not None:
-            self.header = data.columns.tolist()
+        self.header = data.columns.tolist()
 
-            self.fnames = data["FileName"].tolist()
+        self.fnames = data["FileName"].tolist()
 
-            # Assume avi if no suffix
-            self.fnames = [
-                fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
-                ]
-            
-            self.outcome = data.values.tolist()
+        # Assume avi if no suffix
+        self.fnames = [
+            fn if os.path.splitext(fn)[1] == ".avi" else fn + ".avi" for fn in self.fnames
+            ]
+        
+        self.outcome = data.values.tolist()
 
     def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
         data = None
