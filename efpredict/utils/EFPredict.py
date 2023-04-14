@@ -252,6 +252,8 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                 s2 += (outcome ** 2).sum()
 
                 #TODO make it create clips around generated systole and diastole frames.
+                print("X.shape: ", X.shape)
+                print("X type: ", type(X))
                 if block_size is None:
                     outputs = model(X)
                 else:
@@ -271,7 +273,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                         unlabelled_X, _ = next(unlabelled_iterator)
                     
                     #print information about unlabelled_X
-                    print("unlabelled_X: ", unlabelled_X)
                     print("type(unlabelled_X): ", type(unlabelled_X))
                     print("len(unlabelled_X): ", len(unlabelled_X))
                     print("type(unlabelled_X[0]): ", type(unlabelled_X[0]))
