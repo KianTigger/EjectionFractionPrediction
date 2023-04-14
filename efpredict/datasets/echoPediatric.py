@@ -202,7 +202,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 split_to_use = self.tvtu_split[3]
             else:
                 raise ValueError("Invalid split")
-            if split_to_use == 0 or split_to_use < 0 or split_to_use > 1:
+            if split_to_use == 0.0 or split_to_use < 0.0 or split_to_use > 1.0:
                 return None
             elif split_to_use < 1:
                 data = train_test_split(data, test_size=1 - split_to_use, random_state=42)[0]
