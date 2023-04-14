@@ -180,7 +180,10 @@ def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
     pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-
+    print("Pediatric train: ", pediatric_train)
+    print("Pediatric val: ", pediatric_val)
+    print("Pediatric test: ", pediatric_test)
+    print("Pediatric unlabel: ", pediatric_unlabel)
     return pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel
 
 def get_dynamic(data_dir, kwargs, percentage_dynamic_labelled):
