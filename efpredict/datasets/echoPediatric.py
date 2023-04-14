@@ -198,7 +198,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 split_to_use = self.tvtu_split[1]
             elif self.split == "TEST":
                 split_to_use = self.tvtu_split[2]
-            elif self.split == "UNLABELLED":
+            elif self.split == "UNLABEL":
                 split_to_use = self.tvtu_split[3]
             else:
                 raise ValueError("Invalid split")
