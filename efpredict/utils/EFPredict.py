@@ -142,6 +142,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
                     unlabelled_dataloader = DataLoader(
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
+                    print("unlabelled_batch_size: {}".format(unlabelled_batch_size))
                 else:
                     labelled_dataloader = DataLoader(
                         labelled_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True,
