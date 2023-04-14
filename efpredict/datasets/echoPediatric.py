@@ -199,11 +199,14 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
             test_split = self.tvtu_split[2]
             unlabelled_split = self.tvtu_split[3]
 
-             # Check if all values in tvtu are 0, except for tvtu[3], if so unlabel_data = train_test_split with tvtu[3]
+            # Check if all values in tvtu are 0, except for tvtu[3], if so unlabel_data = train_test_split with tvtu[3]
             if all(val == 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
-                unlabel_data = train_test_split(data, test_size=self.tvtu_split[3], random_state=42)
+                data = train_test_split(data, test_size=self.tvtu_split[3], random_state=42)
+            # Check if all values in tvtu are 0, except for tvtu[0], if so data = train_test_split with tvtu[0]
+            elif all(val == 0 for idx, val in enumerate(self.tvtu_split) if idx != 0):
+                data = train_test_split(data, test_size=self.tvtu_split[0], random_state=42)
             # Check if all values in tvtu are greater than 0, except for tvtu[3]
-            if all(val > 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
+            elif all(val > 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
                 # If they don't add up to 1, then normalize them
                 if train_split + val_split + test_split + unlabelled_split != 1:
                     train_split = train_split / (train_split + val_split + test_split + unlabelled_split)
