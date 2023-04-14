@@ -77,7 +77,8 @@ def generate_model(model_name, pretrained):
 def setup_model(seed, model_name, pretrained, device, weights, frames, 
                 period, output, weight_decay, lr, lr_step_period, 
                 num_epochs, labelled_ratio=False, unlabelled_ratio=False,
-                data_type=None, percentage_dynamic_labelled=None, train_val_test_unlabel_split=None):
+                data_type=None, percentage_dynamic_labelled=None, 
+                train_val_test_unlabel_split=None, loss_type=None, alpha=None):
     # Seed RNGs
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -97,6 +98,10 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
             output_dir += f"percentageDynamicLabelled-{percentage_dynamic_labelled}/"
         if train_val_test_unlabel_split != None:
             output_dir += f"trainValTestUnlabelSplit-{train_val_test_unlabel_split}/"
+        if loss_type != None:
+            output_dir += f"lossType-{loss_type}"
+        if alpha != None:
+            output_dir += f"alpha-{alpha}/"
         output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
 
     os.makedirs(output, exist_ok=True)
@@ -300,3 +305,69 @@ def custom_collate(batch):
     if len(batch) == 0:
         return torch.empty(0, *input_shape), torch.empty(0, *output_shape)
     return default_collate(batch)
+
+def log_cosh_loss(predicted, target):
+    loss = torch.log(torch.cosh(predicted - target))
+    return torch.mean(loss)
+
+def get_labelled_loss(loss_type, outputs, outcome):
+    if loss_type == "MSE" or loss_type == "PSEUDO":
+        loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
+    elif loss_type == "MAE":
+        loss = torch.nn.functional.l1_loss(outputs.view(-1), outcome)
+    elif loss_type == "HUBER":
+        loss = torch.nn.functional.smooth_l1_loss(outputs.view(-1), outcome)
+    elif loss_type == "LOGCOSH":
+        loss = log_cosh_loss(outputs.view(-1), outcome)
+    else:
+        raise ValueError("Unknown loss type {}".format(loss_type))
+    
+    return loss
+
+def get_unlabelled_loss(loss_type, model, unlabelled_X, outputs, alpha=0.1):
+    if loss_type == "PSEUDO":
+        # Generate pseudo-labels for the unlabelled data
+        with torch.no_grad():
+            pseudo_labels = model(unlabelled_X).detach()
+
+        # Compute loss using the pseudo-labels
+        unlabelled_loss = torch.nn.functional.mse_loss(model(unlabelled_X).view(-1), pseudo_labels.view(-1))
+    
+    elif loss_type == "MSE":
+        # Compute mse loss between labelled and unlabelled data
+        unlabelled_outputs = model(unlabelled_X)
+        size_diff = outputs.size(0) - unlabelled_outputs.size(0)
+
+        # Pad the smaller tensor with zeros
+        if size_diff > 0:
+            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
+            unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
+        elif size_diff < 0:
+            padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
+            outputs = torch.cat((outputs, padding), dim=0)
+
+        unlabelled_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+
+        unlabelled_loss *= alpha
+
+    elif loss_type == "MAE":
+        # Compute mae loss between labelled and unlabelled data
+        unlabelled_outputs = model(unlabelled_X)
+        unlabelled_loss = torch.nn.functional.l1_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+
+    elif loss_type == "HUBER":
+        # Compute huber loss between labelled and unlabelled data
+        unlabelled_outputs = model(unlabelled_X)
+        unlabelled_loss = torch.nn.functional.smooth_l1_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+
+    elif loss_type == "LOGCOSH":
+        # Compute log-cosh loss between labelled and unlabelled data
+        unlabelled_outputs = model(unlabelled_X)
+        unlabelled_loss = log_cosh_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+
+    else:
+        raise ValueError("Invalid loss_type specified")
+
+    unlabelled_loss *= alpha
+
+    return unlabelled_loss

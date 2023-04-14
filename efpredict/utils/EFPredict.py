@@ -42,7 +42,8 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="A4C")
 @click.option("--percentage_dynamic_labelled", type=int, default=100)
 @click.option("--train_val_test_unlabel_split", type=str, default="0.7,0.15,0.15,0")
-
+@click.option("--loss_type", type=click.Choice(["PSEUDO", "MSE", "MAE", "HUBER", "LOGCOSH"]), default="MSE")
+@click.option("--alpha", type=float, default=0.1)
 
 def run(
     data_dir=None,
@@ -65,6 +66,9 @@ def run(
 
     labelled_ratio=10,
     unlabelled_ratio=1,
+
+    loss_type="MSE",
+    alpha=0.1,
 
     run_test=False,
     num_epochs=45,
@@ -99,7 +103,7 @@ def run(
     while not success:
         try:
             print("Starting training loop")
-            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, labelled_ratio, unlabelled_ratio)
+            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, loss_type, alpha, labelled_ratio, unlabelled_ratio)
             success = True
         except RuntimeError as e:
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
@@ -113,7 +117,7 @@ def run(
 def process_split_string(value):
     return [float(x) for x in value.split(',')]
 
-def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, labelled_ratio, unlabelled_ratio):
+def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, loss_type, alpha, labelled_ratio, unlabelled_ratio):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
@@ -150,7 +154,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
                     unlabelled_dataloader = None
                     
                 checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": bestLoss, "bestLoss": bestLoss, "scheduler": scheduler}
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, unlabelled_dataloader=unlabelled_dataloader)
+                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, loss_type, alpha, unlabelled_dataloader=unlabelled_dataloader)
                 f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
                                                               phase,
                                                               loss,
@@ -185,7 +189,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
 
 
 
-def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, checkpoint_args, save_all=False, block_size=None, unlabelled_dataloader=None):
+def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, checkpoint_args, loss_type, alpha, save_all=False, block_size=None, unlabelled_dataloader=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.
 
     Args:
@@ -260,7 +264,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
 
                 yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
-                loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
+                loss = helpFuncs.get_labelled_loss(loss_type, outputs, outcome)
 
                 if train and (unlabelled_dataloader is not None):
                     
@@ -280,23 +284,11 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                         if average:
                             batch, n_clips, c, f, h, w = unlabelled_X.shape
                             unlabelled_X = unlabelled_X.view(-1, c, f, h, w)
-                        # unlabelled_X = unlabelled_X.to(device)
                         
-                        # Compute consistency loss between labelled and unlabelled data
-                        unlabelled_outputs = model(unlabelled_X)
-                        size_diff = outputs.size(0) - unlabelled_outputs.size(0)
-
-                        # Pad the smaller tensor with zeros
-                        if size_diff > 0:
-                            padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
-                            unlabelled_outputs = torch.cat((unlabelled_outputs, padding), dim=0)
-                        elif size_diff < 0:
-                            padding = torch.zeros(-size_diff, *outputs.size()[1:], device=outputs.device)
-                            outputs = torch.cat((outputs, padding), dim=0)
-
-                        consistency_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
+                        unlabelled_loss = helpFuncs.get_unlabelled_loss(loss_type, model, unlabelled_X, outputs, alpha)
+                        
                         # Add consistency loss to the original loss
-                        loss += consistency_loss
+                        loss += unlabelled_loss
 
                 if train:
                     optim.zero_grad()
