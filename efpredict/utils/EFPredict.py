@@ -285,7 +285,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
 
                     if len(unlabelled_X) > 0 and unlabelled_X is not None:
                         print("doing semi-supervised learning")
-                        unlabelled_X = torch.stack(unlabelled_X).to(device)
+                        unlabelled_X = torch.stack(unlabelled_X[0]).to(device)
 
                         average = (len(unlabelled_X.shape) == 6)
                         print("average: ", average)
