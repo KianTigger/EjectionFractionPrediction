@@ -325,8 +325,9 @@ def get_labelled_loss(loss_type, outputs, outcome):
     return loss
 
 def get_unlabelled_loss(loss_type, model, unlabelled_X, outputs, alpha=0.1):
-    
-    size_diff = outputs.size(0) - unlabelled_outputs.size(0)    
+    unlabelled_outputs = model(unlabelled_X)
+
+    size_diff = outputs.size(0) - unlabelled_outputs.size(0)   
     # Pad the smaller tensor with zeros
     if size_diff > 0:
         padding = torch.zeros(size_diff, *unlabelled_outputs.size()[1:], device=unlabelled_outputs.device)
@@ -343,20 +344,15 @@ def get_unlabelled_loss(loss_type, model, unlabelled_X, outputs, alpha=0.1):
         unlabelled_loss = torch.nn.functional.mse_loss(model(unlabelled_X).view(-1), pseudo_labels.view(-1))
     elif loss_type == "MSE":
         # Compute mse loss between labelled and unlabelled data
-        unlabelled_outputs = model(unlabelled_X)
         unlabelled_loss = torch.nn.functional.mse_loss(outputs.view(-1), unlabelled_outputs.view(-1))
-        unlabelled_loss *= alpha
     elif loss_type == "MAE":
         # Compute mae loss between labelled and unlabelled data
-        unlabelled_outputs = model(unlabelled_X)
         unlabelled_loss = torch.nn.functional.l1_loss(outputs.view(-1), unlabelled_outputs.view(-1))
     elif loss_type == "HUBER":
         # Compute huber loss between labelled and unlabelled data
-        unlabelled_outputs = model(unlabelled_X)
         unlabelled_loss = torch.nn.functional.smooth_l1_loss(outputs.view(-1), unlabelled_outputs.view(-1))
     elif loss_type == "LOGCOSH":
         # Compute log-cosh loss between labelled and unlabelled data
-        unlabelled_outputs = model(unlabelled_X)
         unlabelled_loss = log_cosh_loss(outputs.view(-1), unlabelled_outputs.view(-1))
     else:
         raise ValueError("Invalid loss_type specified")
