@@ -204,7 +204,7 @@ def get_dynamic(data_dir, kwargs, percentage_dynamic_labelled):
     else:    
         dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
         dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=100, **kwargs)
         if percentage_dynamic_labelled != 100:
             dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
         else:
