@@ -117,7 +117,8 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
-        epoch_resume += 1
+        if epoch_resume == 0:
+            epoch_resume += 1
         if epoch_resume > num_epochs and run_test:
             print("Running tests")
         else:
@@ -256,11 +257,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                 else:
                     outputs = torch.cat([model(X[j:(j + block_size), ...]) for j in range(0, X.shape[0], block_size)])
 
-                if save_all:
-                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
-
-                if not save_all:
-                    yhat.append(outputs.view(-1).to("cpu").detach().numpy())
+                yhat.append(outputs.view(-1).to("cpu").detach().numpy())
 
                 loss = torch.nn.functional.mse_loss(outputs.view(-1), outcome)
 
@@ -272,6 +269,14 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X, _ = next(unlabelled_iterator)
+                    
+                    #print information about unlabelled_X
+                    print("unlabelled_X: ", unlabelled_X)
+                    print("type(unlabelled_X): ", type(unlabelled_X))
+                    print("len(unlabelled_X): ", len(unlabelled_X))
+                    print("unlabelled_X[0]: ", unlabelled_X[0])
+                    print("type(unlabelled_X[0]): ", type(unlabelled_X[0]))
+                    print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
 
                     print("len(unlabelled_X): ", len(unlabelled_X))
                     print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
