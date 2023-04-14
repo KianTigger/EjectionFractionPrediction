@@ -225,8 +225,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
             print("Skipping {} steps".format(step_resume))
         with tqdm.tqdm(total=num_items) as pbar:
             for step, (X_batch, outcome) in enumerate(labelled_dataloader):
-                print("X_batch type: ", type(X_batch))
-                print("X_batch len: ", len(X_batch))
 
                 if step_resume > 0 and step < step_resume:
                     # Skip steps before step_resume
@@ -255,8 +253,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                 s2 += (outcome ** 2).sum()
 
                 #TODO make it create clips around generated systole and diastole frames.
-                print("X type: ", type(X))
-                print("X len: ", len(X))
                 if block_size is None:
                     outputs = model(X)
                 else:
@@ -276,19 +272,11 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                         unlabelled_X, _ = next(unlabelled_iterator)
                     
                     #print information about unlabelled_X
-                    print("type(unlabelled_X): ", type(unlabelled_X))
-                    print("len(unlabelled_X): ", len(unlabelled_X))
-                    print("type(unlabelled_X[0]): ", type(unlabelled_X[0]))
-                    print("len(unlabelled_X[0]): ", len(unlabelled_X[0]))
-                    print("type(unlabelled_X[0][0]): ", type(unlabelled_X[0][0]))
-                    print("len(unlabelled_X[0][0]): ", len(unlabelled_X[0][0]))
 
                     if len(unlabelled_X) > 0 and unlabelled_X is not None:
-                        print("doing semi-supervised learning")
                         unlabelled_X = torch.stack(unlabelled_X[0]).to(device)
 
                         average = (len(unlabelled_X.shape) == 6)
-                        print("average: ", average)
                         if average:
                             batch, n_clips, c, f, h, w = unlabelled_X.shape
                             unlabelled_X = unlabelled_X.view(-1, c, f, h, w)
