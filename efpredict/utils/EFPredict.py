@@ -290,7 +290,7 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                         average = (len(unlabelled_X.shape) == 6)
                         print("average: ", average)
                         if average:
-                            batch, n_clips, c, f, h, w = X.shape
+                            batch, n_clips, c, f, h, w = unlabelled_X.shape
                             unlabelled_X = unlabelled_X.view(-1, c, f, h, w)
                         # unlabelled_X = unlabelled_X.to(device)
                         
