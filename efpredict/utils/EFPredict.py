@@ -286,6 +286,12 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     if len(unlabelled_X) > 0 and unlabelled_X is not None:
                         print("doing semi-supervised learning")
                         unlabelled_X = torch.stack(unlabelled_X).to(device)
+
+                        average = (len(unlabelled_X.shape) == 6)
+                        print("average: ", average)
+                        if average:
+                            batch, n_clips, c, f, h, w = X.shape
+                            unlabelled_X = unlabelled_X.view(-1, c, f, h, w)
                         # unlabelled_X = unlabelled_X.to(device)
                         
                         # Compute consistency loss between labelled and unlabelled data
