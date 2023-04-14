@@ -302,6 +302,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         if self.pad is not None:
             video = self.pad_video(video)
 
+        #TODO Add flipping augmentation here, remember to add to pediatric as well
         # Create rotated videos
         videos = [video]
         rotation_angles = random.sample([90, 180, 270], self.num_augmented_videos)

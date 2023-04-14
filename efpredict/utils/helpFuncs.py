@@ -87,7 +87,7 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
     if output is None:
         pretrained_str = "pretrained" if pretrained else "random"
         output_dir = f"output/{pretrained_str}/epochs-{num_epochs}/"
-        if labelled_ratio != False and unlabelled_ratio != False:
+        if labelled_ratio != False and (unlabelled_ratio != False or unlabelled_ratio != 0):
             output_dir += f"semisupervised/ratioLU-{labelled_ratio}-{unlabelled_ratio}/"
         else:
             output_dir += "supervised/"
@@ -176,7 +176,6 @@ def concat_dataset(pediatric, dynamic):
         return pd.DataFrame()
     
 def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
-    print("train_val_test_unlabel_split: ", train_val_test_unlabel_split)
     if train_val_test_unlabel_split[0] <= 0 or train_val_test_unlabel_split[0] > 1:
         pediatric_train = None
     else:
