@@ -176,6 +176,7 @@ def concat_dataset(pediatric, dynamic):
         return pd.DataFrame()
     
 def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
+    print("train_val_test_unlabel_split: ", train_val_test_unlabel_split)
     pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
     pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
