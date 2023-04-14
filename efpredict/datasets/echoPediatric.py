@@ -192,50 +192,20 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         data = self.dataset
 
         if self.split != "ALL":
-            # data = data[data["Split"] == self.split]
-
-            train_split = self.tvtu_split[0]
-            val_split = self.tvtu_split[1]
-            test_split = self.tvtu_split[2]
-            unlabelled_split = self.tvtu_split[3]
-
-            # Check if all values in tvtu are 0, except for tvtu[3], if so unlabel_data = train_test_split with tvtu[3]
-            if all(val == 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
-                data = train_test_split(data, test_size=self.tvtu_split[3], random_state=42)
-            # Check if all values in tvtu are 0, except for tvtu[0], if so data = train_test_split with tvtu[0]
-            elif all(val == 0 for idx, val in enumerate(self.tvtu_split) if idx != 0):
-                data = train_test_split(data, test_size=self.tvtu_split[0], random_state=42)
-            # Check if all values in tvtu are greater than 0, except for tvtu[3]
-            elif all(val > 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
-                # If they don't add up to 1, then normalize them
-                if train_split + val_split + test_split + unlabelled_split != 1:
-                    train_split = train_split / (train_split + val_split + test_split + unlabelled_split)
-                    val_split = val_split / (train_split + val_split + test_split + unlabelled_split)
-                    test_split = test_split / (train_split + val_split + test_split + unlabelled_split)
-                    unlabelled_split = unlabelled_split / (train_split + val_split + test_split + unlabelled_split)
-
-                # Split the data into UNLABEL+TRAIN+VAL TEST
-                unlabel_train_val_data, test_data = train_test_split(data, test_size=test_split, random_state=42)
-                # Split the data into UNLABEL+TRAIN VAL
-                unlabel_train_data, val_data = train_test_split(unlabel_train_val_data, test_size=(val_split / (1-test_split)), random_state=42)
-                # Split the data into UNLABEL TRAIN
-                if (train_split / (1-(test_split+val_split))) == 1:
-                    train_data = unlabel_train_data
-                    unlabel_data = pd.DataFrame()
-                else:
-                    unlabel_data, train_data = train_test_split(unlabel_train_data, test_size=(train_split / (1-(test_split+val_split))), random_state=42)
-
-                if self.split == "TRAIN":
-                    data = train_data
-                elif self.split == "VAL":
-                    data = val_data
-                elif self.split == "TEST":
-                    data = test_data
-                elif self.split == "UNLABEL":
-                    data = unlabel_data
-
-            elif not all(val > 0 for idx, val in enumerate(self.tvtu_split) if idx != 3):
-                raise ValueError("All values in tvtu_split except for tvtu_split[3] must be greater than 0")
+            if self.split == "TRAIN":
+                split_to_use = self.tvtu_split[0]
+            elif self.split == "VAL":
+                split_to_use = self.tvtu_split[1]
+            elif self.split == "TEST":
+                split_to_use = self.tvtu_split[2]
+            elif self.split == "UNLABELLED":
+                split_to_use = self.tvtu_split[3]
+            else:
+                raise ValueError("Invalid split")
+            if split_to_use == 0 or split_to_use < 0 or split_to_use > 1:
+                return None
+            elif split_to_use < 1:
+                data = train_test_split(data, test_size=1 - split_to_use, random_state=42)[0]
 
         self.header = data.columns.tolist()
 

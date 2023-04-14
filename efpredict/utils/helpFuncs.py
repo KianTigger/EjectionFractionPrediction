@@ -176,27 +176,10 @@ def concat_dataset(pediatric, dynamic):
         return pd.DataFrame()
     
 def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
-    if train_val_test_unlabel_split[0] == 0:
-        pediatric_train = None
-        pediatric_val = None
-        pediatric_test = None
-        if train_val_test_unlabel_split[3] == 1:
-            pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
-        else:
-            pediatric_unlabel = None
-    elif train_val_test_unlabel_split[0] == 1:
-        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="all", data_type=data_type, **kwargs)
-        pediatric_val = None
-        pediatric_test = None
-        pediatric_unlabel = None
-    else:
-        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-        pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-        pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-        if train_val_test_unlabel_split[3] != 0:
-            pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
-        else:
-            pediatric_unlabel = None
+    pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+    pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
 
     return pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel
 
