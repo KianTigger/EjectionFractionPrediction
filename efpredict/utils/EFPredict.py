@@ -279,15 +279,12 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     print("len(unlabelled_X[0][0]): ", len(unlabelled_X[0][0]))
                     print("type(unlabelled_X[0][0]): ", type(unlabelled_X[0][0]))
                     print("isinstance(unlabelled_X[0][0], torch.Tensor): ", isinstance(unlabelled_X[0][0], torch.Tensor))
-                    print("unlabelled_X[0][0].shape[0] != 0: ", unlabelled_X[0][0].shape[0] != 0)
+                    print("unlabelled_X[0][0].shape[0]: ", unlabelled_X[0][0].shape[0])
 
-                    print("len(unlabelled_X): ", len(unlabelled_X))
-                    print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
-                    print("unlabelled_X[0].shape[0] != 0: ", unlabelled_X[0].shape[0] != 0)
-                    print("unlabelled_X is not None: ", unlabelled_X is not None)
 
-                    if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
+                    if len(unlabelled_X) > 0 and unlabelled_X is not None:
                         print("doing semi-supervised learning")
+                        unlabelled_X = torch.stack(unlabelled_X[0][0]).to(device)
                         unlabelled_X = unlabelled_X.to(device)
                         
                         # Compute consistency loss between labelled and unlabelled data
