@@ -274,7 +274,6 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     print("unlabelled_X: ", unlabelled_X)
                     print("type(unlabelled_X): ", type(unlabelled_X))
                     print("len(unlabelled_X): ", len(unlabelled_X))
-                    print("unlabelled_X[0]: ", unlabelled_X[0])
                     print("type(unlabelled_X[0]): ", type(unlabelled_X[0]))
                     print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
 
