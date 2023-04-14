@@ -265,18 +265,21 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                     
                     # Sample a batch from the unlabelled dataset
                     try:
-                        unlabelled_X, temp = next(unlabelled_iterator)
+                        unlabelled_X, _ = next(unlabelled_iterator)
                     except StopIteration:
                         unlabelled_iterator = iter(unlabelled_dataloader)
-                        unlabelled_X, temp = next(unlabelled_iterator)
+                        unlabelled_X, _ = next(unlabelled_iterator)
                     
                     #print information about unlabelled_X
                     print("unlabelled_X: ", unlabelled_X)
-                    print("temp: ", temp)
                     print("type(unlabelled_X): ", type(unlabelled_X))
                     print("len(unlabelled_X): ", len(unlabelled_X))
                     print("type(unlabelled_X[0]): ", type(unlabelled_X[0]))
                     print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
+                    print("len(unlabelled_X[0][0]): ", len(unlabelled_X[0][0]))
+                    print("type(unlabelled_X[0][0]): ", type(unlabelled_X[0][0]))
+                    print("isinstance(unlabelled_X[0][0], torch.Tensor): ", isinstance(unlabelled_X[0][0], torch.Tensor))
+                    print("unlabelled_X[0][0].shape[0] != 0: ", unlabelled_X[0][0].shape[0] != 0)
 
                     print("len(unlabelled_X): ", len(unlabelled_X))
                     print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
