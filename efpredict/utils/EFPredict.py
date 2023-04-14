@@ -142,7 +142,6 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
                     unlabelled_dataloader = DataLoader(
                         unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
                         pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
-                    print("unlabelled_batch_size: {}".format(unlabelled_batch_size))
                 else:
                     labelled_dataloader = DataLoader(
                         labelled_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True,
@@ -274,7 +273,13 @@ def run_epoch(model, labelled_dataloader, train, optim, device, step_resume, che
                         unlabelled_iterator = iter(unlabelled_dataloader)
                         unlabelled_X, _ = next(unlabelled_iterator)
 
+                    print("len(unlabelled_X): ", len(unlabelled_X))
+                    print("isinstance(unlabelled_X[0], torch.Tensor): ", isinstance(unlabelled_X[0], torch.Tensor))
+                    print("unlabelled_X[0].shape[0] != 0: ", unlabelled_X[0].shape[0] != 0)
+                    print("unlabelled_X is not None: ", unlabelled_X is not None)
+
                     if len(unlabelled_X) > 0 and isinstance(unlabelled_X[0], torch.Tensor) and unlabelled_X[0].shape[0] != 0 and unlabelled_X is not None:
+                        print("doing semi-supervised learning")
                         unlabelled_X = unlabelled_X.to(device)
                         
                         # Compute consistency loss between labelled and unlabelled data
