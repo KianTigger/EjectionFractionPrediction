@@ -314,9 +314,9 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         augmentations = [('rotate', angle) for angle in [90, 180, 270]] + [('flip', flip_type) for flip_type in ['horizontal', 'vertical', 'both']]
 
         # Limit the number of augmentations to the number of augmentations available
-        num_augmentations = min(self.num_augmented_videos, len(augmentations))
-        selected_augmentations = random.sample(augmentations, num_augmentations)
+        num_augmented_videos = min(self.num_augmented_videos, len(augmentations))
 
+        selected_augmentations = random.sample(augmentations, num_augmented_videos)
         
         for aug_type, aug_param in selected_augmentations:
             if aug_type == 'rotate':
