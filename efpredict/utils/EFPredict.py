@@ -92,7 +92,7 @@ def run(
     if isinstance(train_val_test_unlabel_split, str):
         train_val_test_unlabel_split = process_split_string(train_val_test_unlabel_split)
 
-    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split, num_augmentations)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split, num_augmentations=num_augmentations)
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, 
             model_name, pretrained, device, weights, frames, 
