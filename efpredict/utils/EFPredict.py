@@ -125,7 +125,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
         model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
-        if epoch_resume == 0:
+        if epoch_resume == 0 or (epoch_resume > 0 and step_resume == 0):
             epoch_resume += 1
         if epoch_resume > num_epochs and run_test:
             print("Running tests")
