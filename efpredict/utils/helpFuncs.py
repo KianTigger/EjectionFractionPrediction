@@ -148,12 +148,12 @@ def mean_and_std(data_dir, task, frames, period):
     
     return kwargs
 
-def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0]):
+def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0], num_augmentations=0):
     # Set up datasets and dataloaders
     dataset = {}
-    pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel = get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split)
+    pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel = get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split, num_augmentations)
 
-    dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel = get_dynamic(data_dir, kwargs, percentage_dynamic_labelled)
+    dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel = get_dynamic(data_dir, kwargs, percentage_dynamic_labelled, num_augmentations)
 
     dataset["train"] = concat_dataset(pediatric_train, dynamic_train)
 
@@ -180,37 +180,45 @@ def concat_dataset(pediatric, dynamic):
     else:
         return pd.DataFrame()
     
-def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split):
+def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split, num_augmentations=0):
     if train_val_test_unlabel_split[0] <= 0 or train_val_test_unlabel_split[0] > 1:
         pediatric_train = None
     else:
-        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, 
+            tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmentations, **kwargs)
     if train_val_test_unlabel_split[1] <= 0 or train_val_test_unlabel_split[1] > 1:
         pediatric_val = None
     else:
-        pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, 
+            tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmentations, **kwargs)
     if train_val_test_unlabel_split[2] <= 0 or train_val_test_unlabel_split[2] > 1:
         pediatric_test = None
     else:
-        pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, 
+            tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmentations, **kwargs)
     if train_val_test_unlabel_split[3] <= 0 or train_val_test_unlabel_split[3] > 1:
         pediatric_unlabel = None
     else:
-        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, tvtu_split=train_val_test_unlabel_split, **kwargs)
+        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, 
+            tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmentations, **kwargs)
     return pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel
 
-def get_dynamic(data_dir, kwargs, percentage_dynamic_labelled):
+def get_dynamic(data_dir, kwargs, percentage_dynamic_labelled, num_augmentations=0):
     if percentage_dynamic_labelled == 0:
         dynamic_train = None
         dynamic_val = None
         dynamic_test = None
         dynamic_unlabel = None
     else:    
-        dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-        dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
-        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=100, **kwargs)
+        dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled,
+            num_augmented_videos=num_augmentations, **kwargs)
+        dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, 
+            num_augmented_videos=num_augmentations, **kwargs)
+        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=100, 
+            num_augmented_videos=num_augmentations, **kwargs)
         if percentage_dynamic_labelled != 100:
-            dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, **kwargs)
+            dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, 
+            num_augmented_videos=num_augmentations, **kwargs)
         else:
             dynamic_unlabel = None
 

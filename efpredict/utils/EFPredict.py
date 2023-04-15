@@ -44,6 +44,7 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--train_val_test_unlabel_split", type=str, default="0.7,0.15,0.15,0")
 @click.option("--loss_type", type=click.Choice(["PSEUDO", "MSE", "MAE", "HUBER", "LOGCOSH"]), default="MSE")
 @click.option("--alpha", type=float, default=0.1)
+@click.option("--num_augmentations", type=int, default=0)
 
 def run(
     data_dir=None,
@@ -69,6 +70,7 @@ def run(
 
     loss_type="MSE",
     alpha=0.1,
+    num_augmentations=0,
 
     run_test=False,
     num_epochs=45,
@@ -90,7 +92,7 @@ def run(
     if isinstance(train_val_test_unlabel_split, str):
         train_val_test_unlabel_split = process_split_string(train_val_test_unlabel_split)
 
-    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split, num_augmentations)
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, 
             model_name, pretrained, device, weights, frames, 

@@ -310,12 +310,24 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if self.pad is not None:
             video = self.pad_video(video)
 
-        # Create rotated videos
+        # Combine flipping and rotation augmentations
+        augmentations = [('rotate', angle) for angle in [90, 180, 270]] + [('flip', flip_type) for flip_type in ['horizontal', 'vertical', 'both']]
+        selected_augmentations = random.sample(augmentations, self.num_augmented_videos)
+
         videos = [video]
-        rotation_angles = random.sample([90, 180, 270], self.num_augmented_videos)
-        for rotation_angle in rotation_angles:
-            rotated_video = np.rot90(video, k=rotation_angle // 90, axes=(2, 3)).copy()
-            videos.append(rotated_video)
+        for aug_type, aug_param in selected_augmentations:
+            if aug_type == 'rotate':
+                rotation_angle = aug_param
+                augmented_video = np.rot90(video, k=rotation_angle // 90, axes=(2, 3)).copy()
+            elif aug_type == 'flip':
+                flip_type = aug_param
+                if flip_type == 'horizontal':
+                    augmented_video = np.flip(video, axis=3).copy()
+                elif flip_type == 'vertical':
+                    augmented_video = np.flip(video, axis=2).copy()
+                elif flip_type == 'both':
+                    augmented_video = np.flip(np.flip(video, axis=2), axis=3).copy()
+            videos.append(augmented_video)
 
         return videos, target
 
