@@ -138,7 +138,7 @@ def run_loops(output, device, model, optim, scheduler, num_epochs, batch_size, n
             f.flush()
 
         if run_test:
-            helpFuncs.test_resuls(f, output, model, dataset, batch_size, num_workers, device)  
+            helpFuncs.test_results(f, output, model, dataset, batch_size, num_workers, device)  
 
 def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_args, save_all=False, block_size=None):
     """Run one epoch of training/evaluation for ejection fraction prediction.

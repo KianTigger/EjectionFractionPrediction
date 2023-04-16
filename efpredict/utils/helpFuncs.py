@@ -230,7 +230,7 @@ def get_unlabelled_dataset(data_dir):
     unlabelled_dataset = efpredict.datasets.EchoUnlabelled(root=data_dir)
     return unlabelled_dataset
 
-def test_resuls(f, output, model, dataset, batch_size, num_workers, device):
+def test_results(f, output, model, dataset, batch_size, num_workers, device):
     for split in ["val", "test"]:
         # Performance without test-time augmentation
         ds = dataset[split]

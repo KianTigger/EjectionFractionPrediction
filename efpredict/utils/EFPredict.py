@@ -110,6 +110,8 @@ def run(
             run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, loss_type, alpha, labelled_ratio, unlabelled_ratio)
             success = True
         except RuntimeError as e:
+            # Reduce batch size in case of cuda out of memory error
+            batch_size = math.ceil(batch_size / 2)
             if "DataLoader worker" in str(e) and "is killed by signal: Killed" in str(e):
                 print("DataLoader worker killed. Restarting...")
             else:
@@ -189,7 +191,7 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
             print("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
 
         if run_test:
-            helpFuncs.test_resuls(f, output, model, dataset, batch_size, num_workers, device)  
+            helpFuncs.test_results(f, output, model, dataset, batch_size, num_workers, device)  
 
 
 
