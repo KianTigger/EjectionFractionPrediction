@@ -52,6 +52,12 @@ def save_checkpoint(model, period, frames, epoch, step, output, loss, bestLoss, 
             bestLoss = loss
         return bestLoss
 
+def delete_checkpoint(output):
+    try:
+        os.remove(os.path.join(output, "checkpoint.pt"))
+    except FileNotFoundError:
+        pass
+
 def generate_model(model_name, pretrained):
     model_name = model_name.lower()
     assert model_name in ["r2plus1d_18", "mc3_18", "r3d_18"], "Model name must be one of r2plus1d_18, mc3_18, r3d_18"

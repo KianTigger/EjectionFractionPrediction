@@ -178,6 +178,9 @@ def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batc
             scheduler.step()
             
             bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, optim, scheduler)
+        
+        # Once the training is done, delete the checkpoint file, as we have the best weights saved
+        helpFuncs.delete_checkpoint(output)
 
         # Load best weights
         if num_epochs != 0:
