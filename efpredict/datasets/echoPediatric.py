@@ -16,7 +16,7 @@ import numpy as np
 import torchvision
 import efpredict
 from sklearn.model_selection import train_test_split
-import datasetHelpFuncs as helpFuncs
+import efpredict.datasets.datasetHelpFuncs as helpFuncs
 
 
 class EchoPediatric(torchvision.datasets.VisionDataset):

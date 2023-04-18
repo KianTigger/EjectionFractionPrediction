@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 import torchvision
 import efpredict
-import datasetHelpFuncs as helpFuncs
+import efpredict.datasets.datasetHelpFuncs as helpFuncs
 
 class EchoDynamic(torchvision.datasets.VisionDataset):
     """EchoNet-Dynamic Dataset.
