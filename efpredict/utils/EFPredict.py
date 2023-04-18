@@ -45,6 +45,10 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--loss_type", type=click.Choice(["PSEUDO", "MSE", "MAE", "HUBER", "LOGCOSH"]), default="MSE")
 @click.option("--alpha", type=float, default=0.1)
 @click.option("--num_augmented_videos", type=int, default=0)
+@click.option("--dropout_only", default=False, is_flag=True)
+@click.option("--dropout_int", type=int, default=0)
+@click.option("--rotation_only", default=False, is_flag=True)
+@click.option("--rotation_int", type=int, default=0)
 
 def run(
     data_dir=None,
@@ -71,6 +75,10 @@ def run(
     loss_type="MSE",
     alpha=0.1,
     num_augmented_videos=0,
+    dropout_only=False,
+    dropout_int=0,
+    rotation_only=False,
+    rotation_int=0,
 
     run_test=False,
     num_epochs=45,
@@ -91,8 +99,12 @@ def run(
     # if train_val_test_unlabel_split is a string, convert to list
     if isinstance(train_val_test_unlabel_split, str):
         train_val_test_unlabel_split = process_split_string(train_val_test_unlabel_split)
+    
+    augmented_args = [num_augmented_videos, dropout_only, rotation_only, dropout_int, rotation_int]
 
-    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, train_val_test_unlabel_split, num_augmented_videos=num_augmented_videos)
+    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, 
+                                    train_val_test_unlabel_split, augmented_args=augmented_args,
+                                    )
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, 
             model_name, pretrained, device, weights, frames, 
@@ -100,14 +112,15 @@ def run(
             num_epochs, labelled_ratio, unlabelled_ratio, 
             data_type, percentage_dynamic_labelled, 
             train_val_test_unlabel_split, loss_type, 
-            alpha, num_augmented_videos)
+            alpha, num_augmented_videos, dropout_only, rotation_only, dropout_int, rotation_int)
 
     success = False
 
     while not success:
         try:
             print("Starting training loop")
-            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, loss_type, alpha, labelled_ratio, unlabelled_ratio)
+            run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, 
+                      num_workers, period, frames, run_test, loss_type, alpha, labelled_ratio, unlabelled_ratio)
             success = True
         except RuntimeError as e:
             # Reduce batch size in case of cuda out of memory error
