@@ -112,9 +112,9 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
             output_dir += f"alpha-{alpha}/"
         if num_augmented_videos != 0:
             output_dir += f"numAugmentations-{num_augmented_videos}"
-            if dropout_only != None:
+            if dropout_only == True:
                 output_dir += f"-dropoutOnly-{dropout_only}/dropoutInt-{dropout_int}"
-            elif rotation_only != None:
+            elif rotation_only == True:
                 output_dir += f"-rotationOnly-{rotation_only}/rotationInt-{rotation_int}/"
             else:
                 output_dir += f"/dropoutInt-{dropout_int}-rotationInt-{rotation_int}/"
