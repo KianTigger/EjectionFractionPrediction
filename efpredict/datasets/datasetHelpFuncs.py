@@ -9,6 +9,8 @@ def augment_video(video, num_augmented_videos=0, dropout_only=False, rotation_on
     if num_augmented_videos == 0:
         return videos
     
+    videos = []
+    
     # Combine rotation and pixel dropout augmentations
     dropout_percentages = [0.01, 0.02, 0.03], [0.02, 0.03, 0.05], [0.03, 0.05, 0.08], [0.05, 0.08, 0.13]
     # if droupout_percentages is an int between 0 and 3 inclusive, use the corresponding list of dropout percentages
