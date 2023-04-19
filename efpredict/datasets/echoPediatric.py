@@ -13,10 +13,10 @@ import random
 import pandas as pd
 
 import numpy as np
-import skimage.draw
 import torchvision
 import efpredict
 from sklearn.model_selection import train_test_split
+import efpredict.datasets.datasetHelpFuncs as helpFuncs
 
 
 class EchoPediatric(torchvision.datasets.VisionDataset):
@@ -65,6 +65,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  clips=1,
                  tvtu_split=[0.7, 0.15, 0.15, 0], #train, val, test, unlabelled
                  num_augmented_videos=0,
+                 dropout_only=False, rotation_only=False,
+                 dropout_int=None, rotation_int=None,
                  createAllClips=False,
                  pad=None,
                  noise=None,
@@ -89,6 +91,10 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.clips = clips
         self.tvtu_split = tvtu_split
         self.num_augmented_videos = num_augmented_videos
+        self.dropout_only = dropout_only
+        self.rotation_only = rotation_only
+        self.dropout_int = dropout_int
+        self.rotation_int = rotation_int
         self.createAllClips = createAllClips
         self.pad = pad
         self.noise = noise
@@ -310,38 +316,10 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         if self.pad is not None:
             video = self.pad_video(video)
 
-        videos = self.augment_video(video)
+        videos = helpFuncs.augment_video(video, self.num_augmented_videos, self.dropout_only, self.rotation_only, self.dropout_int, self.rotation_int)
 
         return videos, target
-    
-    def augment_video(self, video):
-        videos = [video]
-        if self.num_augmented_videos == 0:
-            return videos
-        
-        # Combine flipping and rotation augmentations
-        augmentations = [('rotate', angle) for angle in [90, 180, 270]] + [('flip', flip_type) for flip_type in ['horizontal', 'vertical', 'both']]
 
-        # Limit the number of augmentations to the number of augmentations available
-        num_augmented_videos = min(self.num_augmented_videos, len(augmentations))
-        selected_augmentations = random.sample(augmentations, num_augmented_videos)
-
-        
-        for aug_type, aug_param in selected_augmentations:
-            if aug_type == 'rotate':
-                rotation_angle = aug_param
-                augmented_video = np.rot90(video, k=rotation_angle // 90, axes=(2, 3)).copy()
-            elif aug_type == 'flip':
-                flip_type = aug_param
-                if flip_type == 'horizontal':
-                    augmented_video = np.flip(video, axis=3).copy()
-                elif flip_type == 'vertical':
-                    augmented_video = np.flip(video, axis=2).copy()
-                elif flip_type == 'both':
-                    augmented_video = np.flip(np.flip(video, axis=2), axis=3).copy()
-            videos.append(augmented_video)
-        
-        return videos
 
     def set_length(self, video):
         c, f, h, w = video.shape
