@@ -179,7 +179,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         if self.split != "ALL":
             rng = np.random.default_rng(42)  # Use a fixed random seed for reproducibility
-            if self.split != "UNLABELLED":
+            if self.split != "UNLABELLED" and self.split != "UNLABEL":
                 data = data[data["Split"] == self.split]
                 if self.split != "TEST":
                     indices = rng.choice(len(data), len(data), replace=False)
