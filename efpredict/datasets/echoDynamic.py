@@ -285,8 +285,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         if len(missing) != 0:
             print("{} videos could not be found in {}:".format(
                 len(missing), os.path.join(self.root, "Videos")))
-            # for f in sorted(missing):
-            #     print("\t", f)
+            for f in sorted(missing):
+                print("\t", f)
             raise FileNotFoundError(os.path.join(
                 self.root, "Videos", sorted(missing)[0]))
 
