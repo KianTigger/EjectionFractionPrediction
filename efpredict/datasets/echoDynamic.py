@@ -248,6 +248,12 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                         else:
                             rowED = rows[rows.iloc[:, 2] == "ED"]
                             rowES = rows[rows.iloc[:, 2] == "ES"]
+                            print("rowED", rowED)
+                            print("rowED.values", rowED.values)
+                            print("rowES", rowES)
+                            print("rowES.values", rowES.values)
+                            print("rowED.values[3]", rowED.values[3])
+                            print("rowES.values[3]", rowES.values[3])
                             print("pd.eval(rowED.values[3]): ", pd.eval(rowED.values[3]))
                             quit()
                             ED_Predictions = pd.eval(rowED.values[3])
