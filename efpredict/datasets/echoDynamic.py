@@ -246,22 +246,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                             self.phase_values[name] = [list(range(
                                 0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                         else:
-                            print(rows)
                             rowED = rows[rows.iloc[:, 2] == "ED"]
-                            print("rows: ", rows)
                             rowES = rows[rows.iloc[:, 2] == "ES"]
-                            print("rowED", rowED)
-                            print("rowED.values", rowED.values)
-                            print("rowES", rowES)
-                            print("rowES.values", rowES.values)
-                            print("rowES.values[0]", rowES.values[0])
-                            print("rowED.values[0]", rowED.values[0])
-                            print("rowED.values[3]", rowED.values[0][3])
-                            print("rowES.values[3]", rowES.values[0][3])
-                            print("pd.eval(rowED.values[3]): ", pd.eval(rowED.values[0][3]))
-                            quit()
-                            ED_Predictions = pd.eval(rowED.values[3])
-                            ES_Predictions = pd.eval(rowES.values[3])
+                            ED_Predictions = pd.eval(rowED.values[0][3])
+                            ES_Predictions = pd.eval(rowES.values[0][3])
                             if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
                                 # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
                                 continue
