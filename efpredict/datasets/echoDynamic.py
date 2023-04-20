@@ -225,7 +225,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
             try:
                 with open(os.path.join(self.root, filename)) as f:
-                    data = pd.read_csv(f, index_col=False)
+                    data = pd.read_csv(f, index_col=False, header=None)
 
                     # Go through each name in self.fnames, and find the corresponding row in data,
                     # then add the ED and ES predictions to self.phase_values if they are not empty lists
@@ -246,7 +246,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                             self.phase_values[name] = [list(range(
                                 0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                         else:
-                            print("rows", rows)
+                            print(rows)
                             rowED = rows[rows.iloc[:, 2] == "ED"]
                             print("rows: ", rows)
                             rowES = rows[rows.iloc[:, 2] == "ES"]
