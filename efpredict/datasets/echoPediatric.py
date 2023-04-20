@@ -243,9 +243,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                             if name in self.phase_values:
                                 continue
                             rows = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
-                            # if len(rows) == 0:
-                            #     print(f"Warning: {name} not found in {filename}, skipping")
-                            #     continue
+                            if len(rows) == 0:
+                                # print(f"Warning: {name} not found in {filename}, skipping")
+                                continue
                             if self.createAllClips:
                                 # need another way of getting number of frames
                                 print("TODO: get number of frames")
