@@ -171,18 +171,6 @@ def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=1
 
     dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel = get_dynamic(data_dir, kwargs, percentage_dynamic_labelled, augmented_args)
 
-    # Example code
-    print("Pediatric train: ", len(pediatric_train) if pediatric_train is not None else 0)
-    print("Pediatric val: ", len(pediatric_val) if pediatric_val is not None else 0)
-    print("Pediatric test: ", len(pediatric_test) if pediatric_test is not None else 0)
-    print("Pediatric unlabelled: ", len(pediatric_unlabel) if pediatric_unlabel is not None else 0)
-
-    print("Dynamic train: ", len(dynamic_train) if dynamic_train is not None else 0)
-    print("Dynamic val: ", len(dynamic_val) if dynamic_val is not None else 0)
-    print("Dynamic test: ", len(dynamic_test) if dynamic_test is not None else 0)
-    print("Dynamic unlabelled: ", len(dynamic_unlabel) if dynamic_unlabel is not None else 0)
-
-
     dataset["train"] = concat_dataset(pediatric_train, dynamic_train)
 
     dataset["val"] = concat_dataset(pediatric_val, dynamic_val)
