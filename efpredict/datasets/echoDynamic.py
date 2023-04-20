@@ -438,8 +438,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         # if there are no clips, print a warning with the video name, and return 1 clip
         if len(new_video) == 0:
-            print("Warning: No clips found for video {}".format(
-                self.fnames[index]))
+            # print("Warning: No clips found for video {}".format(
+            #     self.fnames[index]))
             # return first clip_length frames of video
             return video[:, :clip_length, :, :]
         else:
