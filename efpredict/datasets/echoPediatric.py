@@ -255,6 +255,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                                 self.phase_values[name] = [list(range(
                                     0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                             else:
+                                print("TODO: get number of frames")
+                                print("filename: ", filename)
                                 # UVT is filename, ED predictions, ES predictions
                                 if filename == "EchoPhaseDetection.csv":
                                     rowED = rows[rows.iloc[:, 2] == "ED"]
