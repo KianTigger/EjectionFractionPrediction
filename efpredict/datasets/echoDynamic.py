@@ -233,6 +233,11 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                         # if self.phase_values[name] has already been set, then skip
                         if name in self.phase_values:
                             continue
+                        print(f"Getting phase labels for {name} from {filename}")
+                        #print row 0 of data
+                        print(data.iloc[0])
+                        #print row 1 of data
+                        print(data.iloc[1])
                         row = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
                         if len(row) == 0:
                             print(f"Warning: {name} not found in {filename}, skipping")
