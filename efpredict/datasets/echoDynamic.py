@@ -248,6 +248,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                         else:
                             print("rows", rows)
                             rowED = rows[rows.iloc[:, 2] == "ED"]
+                            print("rows: ", rows)
                             rowES = rows[rows.iloc[:, 2] == "ES"]
                             print("rowED", rowED)
                             print("rowED.values", rowED.values)
