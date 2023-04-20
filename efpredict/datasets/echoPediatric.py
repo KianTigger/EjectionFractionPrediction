@@ -255,10 +255,18 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                                 self.phase_values[name] = [list(range(
                                     0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                             else:
-                                rowED = rows[rows.iloc[:, 2] == "ED"]
-                                rowES = rows[rows.iloc[:, 2] == "ES"]
-                                ED_Predictions = pd.eval(rowED.values[0][3])
-                                ES_Predictions = pd.eval(rowES.values[0][3])
+                                # UVT is filename, ED predictions, ES predictions
+                                if filename == "EchoPhaseDetection.csv":
+                                    rowED = rows[rows.iloc[:, 2] == "ED"]
+                                    rowES = rows[rows.iloc[:, 2] == "ES"]
+                                    ED_Predictions = pd.eval(rowED.values[0][3])
+                                    ES_Predictions = pd.eval(rowES.values[0][3])
+                                else:
+                                    ED_Predictions = pd.eval(rows.values[0][2])
+                                    ES_Predictions = pd.eval(rows.values[0][3])
+                                    print("ED Predictions: ", ED_Predictions)
+                                    print("ES Predictions: ", ES_Predictions)
+                                    quit()
                                 if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
                                     # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
                                     continue
