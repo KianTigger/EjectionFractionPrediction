@@ -41,7 +41,7 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--unlabelled_ratio", type=int, default=1)
 @click.option("--data_type", type=click.Choice(["ALL", "A4C", "PSAX"]), default="A4C")
 @click.option("--percentage_dynamic_labelled", type=int, default=100)
-@click.option("--train_val_test_unlabel_split", type=str, default="0.7,0.15,0.15,0")
+@click.option("--train_val_test_unlabel_split", type=str, default="0.8,0.2,0,0")
 @click.option("--loss_type", type=click.Choice(["PSEUDO", "MSE", "MAE", "HUBER", "LOGCOSH"]), default="MSE")
 @click.option("--alpha", type=float, default=0.1)
 @click.option("--num_augmented_videos", type=int, default=0)
@@ -67,7 +67,7 @@ def run(
 
     data_type="A4C",
     percentage_dynamic_labelled=100, 
-    train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0],
+    train_val_test_unlabel_split=[0.8, 0.2, 0, 0],
 
     labelled_ratio=10,
     unlabelled_ratio=1,

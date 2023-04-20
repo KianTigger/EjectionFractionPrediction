@@ -164,7 +164,7 @@ def mean_and_std(data_dir, task, frames, period):
             }
     return kwargs
 
-def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.7, 0.15, 0.15, 0], augmented_args=[0, False, False, 0, 0]):
+def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.8, 0.2, 0, 0], augmented_args=[0, False, False, 0, 0]):
     # Set up datasets and dataloaders
     dataset = {}
     pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel = get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split, augmented_args)
