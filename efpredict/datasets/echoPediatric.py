@@ -225,46 +225,47 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         
         self.outcome = data.values.tolist()
 
-    def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
+    def get_phase_labels(self, outputFilename="PhasesList.csv"):
         
         predictionFiles = ["UVT_M_REG.csv", "UVT_R_CLA.csv", "UVT_R_REG.csv", "UVT_M_CLA.csv", "EchoPhaseDetection.csv"]
 
-        for filename in predictionFiles:
+        for dataType in ["A4C", "PSAX"]:
+            for filename in predictionFiles:
 
-            try:
-                with open(os.path.join(self.root, filename)) as f:
-                    data = pd.read_csv(f, index_col=False, header=None)
+                try:
+                    with open(os.path.join(self.root, dataType, filename)) as f:
+                        data = pd.read_csv(f, index_col=False, header=None)
 
-                    # Go through each name in self.fnames, and find the corresponding row in data,
-                    # then add the ED and ES predictions to self.phase_values if they are not empty lists
-                    for name in self.fnames:
-                        # if self.phase_values[name] has already been set, then skip
-                        if name in self.phase_values:
-                            continue
-                        rows = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
-                        if len(rows) == 0:
-                            print(f"Warning: {name} not found in {filename}, skipping")
-                            continue
-                        if self.createAllClips:
-                            # need another way of getting number of frames
-                            print("TODO: get number of frames")
-                            quit()
-                            number_of_frames = "TODO" #TODO
-                            length = self.length
-                            self.phase_values[name] = [list(range(
-                                0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
-                        else:
-                            rowED = rows[rows.iloc[:, 2] == "ED"]
-                            rowES = rows[rows.iloc[:, 2] == "ES"]
-                            ED_Predictions = pd.eval(rowED.values[0][3])
-                            ES_Predictions = pd.eval(rowES.values[0][3])
-                            if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
-                                # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
+                        # Go through each name in self.fnames, and find the corresponding row in data,
+                        # then add the ED and ES predictions to self.phase_values if they are not empty lists
+                        for name in self.fnames:
+                            # if self.phase_values[name] has already been set, then skip
+                            if name in self.phase_values:
                                 continue
-                            self.phase_values[name] = [ED_Predictions, ES_Predictions]
+                            rows = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
+                            # if len(rows) == 0:
+                            #     print(f"Warning: {name} not found in {filename}, skipping")
+                            #     continue
+                            if self.createAllClips:
+                                # need another way of getting number of frames
+                                print("TODO: get number of frames")
+                                quit()
+                                number_of_frames = "TODO" #TODO
+                                length = self.length
+                                self.phase_values[name] = [list(range(
+                                    0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
+                            else:
+                                rowED = rows[rows.iloc[:, 2] == "ED"]
+                                rowES = rows[rows.iloc[:, 2] == "ES"]
+                                ED_Predictions = pd.eval(rowED.values[0][3])
+                                ES_Predictions = pd.eval(rowES.values[0][3])
+                                if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
+                                    # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
+                                    continue
+                                self.phase_values[name] = [ED_Predictions, ES_Predictions]
 
-            except FileNotFoundError:
-                print(f"Warning: {filename} not found, skipping")
+                except FileNotFoundError:
+                    print(f"Warning: {filename} not found, skipping")
 
 
 
