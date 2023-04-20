@@ -133,12 +133,13 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.get_phase_labels()
 
-        for dataset, datatype in [[self.dfa4c, 'A4C'], [self.dfpsax, 'PSAX']]:
+        with open(os.path.join(self.root, datatype, outputfilename), 'w', newline='') as f:
+            headers = dataset.columns.values.tolist() + ['StartFrame', 'EndFrame']
+            f.write(','.join(headers) + '\n')
 
-            # Create a new csv file with the new file names, overwrite if it already exists
-            with open(os.path.join(self.root, datatype, outputfilename), 'w', newline='') as f:
-                headers = dataset.columns.values.tolist() + ['StartFrame', 'EndFrame']
-                f.write(','.join(headers) + '\n')
+            for dataset, datatype in [[self.dfa4c, 'A4C'], [self.dfpsax, 'PSAX']]:
+
+                # Create a new csv file with the new file names, overwrite if it already exists
 
                 for row in dataset.iterrows():
                     name = row[1]["FileName"]
