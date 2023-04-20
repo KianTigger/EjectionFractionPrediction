@@ -182,6 +182,11 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         print("Data size123: ", len(data))
 
+        # print first 5 rows of the dataframe.
+        print(data.head())
+
+        
+
         data['Split'].map(lambda x: x.upper())
 
         if self.split != "ALL":
