@@ -205,6 +205,9 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 
                 data = pd.concat(unlabelled_data)
 
+        if self.split == "TRAIN":
+            print("Training data size: ", len(data))
+            print("Training data size total: ", len(data[data["Split"] == "TRAIN"]))
 
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()
@@ -217,8 +220,16 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         self.outcome = data.values.tolist()
 
     def get_phase_labels(self, outputFilename="PhasesList.csv"):
+        try:
+            if os.path.exists(outputFilename):
+                existing_data = pd.read_csv(outputFilename)
+                for _, row in existing_data.iterrows():
+                    self.phase_values[row['FileName']] = [pd.eval(row['ED_Predictions']), pd.eval(row['ES_Predictions'])]
+        except:
+            pass
 
         predictionFiles = ["EchoPhaseDetection.csv", "UVT_M_REG.csv", "UVT_R_CLA.csv", "UVT_R_REG.csv", "UVT_M_CLA.csv"]
+        output_data = []
 
         for filename in predictionFiles:
 
@@ -252,10 +263,16 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                                 # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
                                 continue
                             self.phase_values[name] = [ED_Predictions, ES_Predictions]
-                            
+                            output_data.append({"FileName": name, "ED_Predictions": ED_Predictions, "ES_Predictions": ES_Predictions})
 
             except FileNotFoundError:
                 print(f"Warning: {filename} not found, skipping")
+
+        # Write output data to a new file
+        with open(outputFilename, "w") as output_file:
+            output_file.write("FileName,ED_Predictions,ES_Predictions\n")
+            for row in output_data:
+                output_file.write(f"{row['FileName']},{row['ED_Predictions']},{row['ES_Predictions']}\n")
 
         # check if any of the names in self.fnames are not in self.phase_values
         # if so, then add them to self.phase_values with empty lists
