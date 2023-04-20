@@ -134,7 +134,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.get_phase_labels()
 
         with open(os.path.join(self.root, outputfilename), 'w', newline='') as f:
-            headers = data.values.tolist() + ['StartFrame', 'EndFrame']
+            headers = data.columns.values.tolist() + ['StartFrame', 'EndFrame']
             f.write(','.join(headers) + '\n')
 
             for row in data.iterrows():
