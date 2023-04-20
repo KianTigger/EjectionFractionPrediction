@@ -231,15 +231,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         for dataType in ["A4C", "PSAX"]:
             for filename in predictionFiles:
-                print("filename: ", filename)
-                print("self.phase values: ", self.phase_values)
-
                 try:
                     with open(os.path.join(self.root, dataType, filename)) as f:
                         data = pd.read_csv(f, index_col=False, header=None)
-
-                        print("opened file: ", filename)
-
                         # Go through each name in self.fnames, and find the corresponding row in data,
                         # then add the ED and ES predictions to self.phase_values if they are not empty lists
                         for name in self.fnames:
@@ -267,14 +261,8 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                                     ED_Predictions = pd.eval(rowED.values[0][3])
                                     ES_Predictions = pd.eval(rowES.values[0][3])
                                 else:
-                                    print(rows)
-                                    print(rows.values)
-                                    print(rows.values[0])
                                     ED_Predictions = pd.eval(rows.values[0][1])
                                     ES_Predictions = pd.eval(rows.values[0][2])
-                                    print("ED Predictions: ", ED_Predictions)
-                                    print("ES Predictions: ", ES_Predictions)
-                                    quit()
                                 if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
                                     # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
                                     continue
