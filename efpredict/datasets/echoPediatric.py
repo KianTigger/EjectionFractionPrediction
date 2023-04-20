@@ -231,7 +231,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         for dataType in ["A4C", "PSAX"]:
             for filename in predictionFiles:
-
+                print("filename: ", filename)
                 try:
                     with open(os.path.join(self.root, dataType, filename)) as f:
                         data = pd.read_csv(f, index_col=False, header=None)
