@@ -267,7 +267,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
 
         if len(missing_values) > 0:
-            print("Missing phase information for dynamic {} videos.".format(
+            print("Missing phase information for {} dynamic videos.".format(
                 len(missing_values)))
             self.generate_phase_predictions(missing_values)
 
