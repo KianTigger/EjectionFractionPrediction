@@ -234,7 +234,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                             continue
                         rows = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
                         if len(rows) == 0:
-                            print(f"Warning: {name} not found in {filename}, skipping")
                             continue
                         if self.createAllClips:
                             # need another way of getting number of frames
@@ -268,7 +267,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
 
         if len(missing_values) > 0:
-            print("Missing phase information for {} videos.".format(
+            print("Missing phase information for dynamic {} videos.".format(
                 len(missing_values)))
             self.generate_phase_predictions(missing_values)
 

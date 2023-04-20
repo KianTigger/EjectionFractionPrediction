@@ -282,7 +282,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                 missing_values.append(name)  
 
         if len(missing_values) > 0:
-            print("Missing phase information for {} videos.".format(
+            print("Missing phase information for {} pediatric videos.".format(
                 len(missing_values)))
             self.generate_phase_predictions(missing_values)
 
