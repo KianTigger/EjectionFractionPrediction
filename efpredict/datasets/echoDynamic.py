@@ -259,10 +259,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             except FileNotFoundError:
                 print(f"Warning: {filename} not found, skipping")
 
-        #Write the phase labels to a file
-        with open(os.path.join(self.root, outputFilename), "w") as f:
-            for name in self.phase_values:
-                f.write(f"{name},{','.join(map(str, self.phase_values[name][0]))},{','.join(map(str, self.phase_values[name][1]))}\n")
+        # #Write the phase labels to a file
+        # with open(os.path.join(self.root, outputFilename), "w") as f:
+        #     for name in self.phase_values:
+        #         f.write(f"{name},{','.join(map(str, self.phase_values[name][0]))},{','.join(map(str, self.phase_values[name][1]))}\n")
 
         # check if any of the names in self.fnames are not in self.phase_values
         # if so, then add them to self.phase_values with empty lists
