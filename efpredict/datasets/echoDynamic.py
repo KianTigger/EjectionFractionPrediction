@@ -124,12 +124,13 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
     def create_EF_Labels(self, filename="FileList.csv", outputfilename="FileListPhaseClips.csv"):
 
-        self.get_phase_labels()
-
         with open(os.path.join(self.root, filename)) as f:
             data = pd.read_csv(f)
 
         self.fnames = data["FileName"].tolist()
+
+        self.get_phase_labels()
+
 
         # Create a new csv file with the new file names, overwrite if it already exists
         with open(os.path.join(self.root, outputfilename), 'w', newline='') as f:
@@ -216,53 +217,64 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         self.outcome = data.values.tolist()
 
-    def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
-        data = None
+    def get_phase_labels(self, outputFilename="PhasesList.csv"):
 
-        try:
-            with open(os.path.join(self.root, filename)) as f:
-                data = pd.read_csv(f)
+        predictionFiles = ["EchoPhaseDetection.csv", "UVT_M_REG.csv", "UVT_R_CLA.csv", "UVT_R_REG.csv", "UVT_M_CLA.csv"]
 
-        except FileNotFoundError:
+        for filename in predictionFiles:
+
             try:
-                with open(os.path.join(self.root, predictionsFileName)) as f:
-                    data = pd.read_csv(f)
+                with open(os.path.join(self.root, filename)) as f:
+                    data = pd.read_csv(f, index_col=False)
+
+                    # Go through each name in self.fnames, and find the corresponding row in data,
+                    # then add the ED and ES predictions to self.phase_values if they are not empty lists
+                    for name in self.fnames:
+                        # if self.phase_values[name] has already been set, then skip
+                        if name in self.phase_values:
+                            continue
+                        row = data[data["FileName"] == name]
+                        if len(row) == 0:
+                            print(f"Warning: {name} not found in {filename}, skipping")
+                            continue
+                        if self.createAllClips:
+                            # need another way of getting number of frames
+                            print("TODO: get number of frames")
+                            quit()
+                            number_of_frames = "TODO" #TODO
+                            length = self.length
+                            self.phase_values[name] = [list(range(
+                                0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
+                        else:
+                            ED_Predictions = pd.eval(row["ED_Predictions"].values[0])
+                            ES_Predictions = pd.eval(row["ES_Predictions"].values[0])
+                            if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
+                                # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
+                                continue
+                            self.phase_values[name] = [ED_Predictions, ES_Predictions]
 
             except FileNotFoundError:
-                print("No phase information found. TODO Will generate phase information.")
-                # TODO, generate phase information from here
+                print(f"Warning: {filename} not found, skipping")
 
-        if data is not None:
-            missing_values = []
-            for _, row in data.iterrows():
-                if self.createAllClips:
-                    number_of_frames = row["NumberOfFrames"]
-                    length = self.length
-                    # TODO, change this to be a list of tuples
-                    self.phase_values[filename] = [list(range(
-                        0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
-                else:
-                    filename = row[0]
-                    ED_Predictions = pd.eval(row[1])
-                    ES_Predictions = pd.eval(row[2])
-                    if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
-                        missing_values.append(filename)
-                    self.phase_values[filename] = [
-                        ED_Predictions, ES_Predictions]
+        # check if any of the names in self.fnames are not in self.phase_values
+        # if so, then add them to self.phase_values with empty lists
+        missing_values = []
+        for name in self.fnames:
+            if name not in self.phase_values:
+                self.phase_values[name] = [[], []]
+                missing_values.append(name)     
 
-            if len(missing_values) > 0:
-                print("Missing phase information for {} videos.".format(
-                    len(missing_values)))
-                print("TODO TODO TODO Will generate phase information for these videos.")
-                self.generate_phase_predictions(missing_values)
-                # TODO, generate phase information from here
 
-            self.check_missing_files()
+        if len(missing_values) > 0:
+            print("Missing phase information for {} videos.".format(
+                len(missing_values)))
+            print("TODO TODO TODO Will generate phase information for these videos.")
+            self.generate_phase_predictions(missing_values)
 
-        else:
-            self.generate_phase_predictions()
+        self.check_missing_files()
 
-    def generate_phase_predictions(self, filenames=None):
+        
+    def generate_phase_predictions(self, filenames=None, missing_values=None):
         # TODO generate phase information
         pass
 
