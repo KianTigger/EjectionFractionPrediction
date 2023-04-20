@@ -232,9 +232,13 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         for dataType in ["A4C", "PSAX"]:
             for filename in predictionFiles:
                 print("filename: ", filename)
+                print("self.phase values: ", self.phase_values)
+
                 try:
                     with open(os.path.join(self.root, dataType, filename)) as f:
                         data = pd.read_csv(f, index_col=False, header=None)
+
+                        print("opened file: ", filename)
 
                         # Go through each name in self.fnames, and find the corresponding row in data,
                         # then add the ED and ES predictions to self.phase_values if they are not empty lists
@@ -255,8 +259,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                                 self.phase_values[name] = [list(range(
                                     0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                             else:
-                                print("TODO: get number of frames")
-                                print("filename: ", filename)
                                 # UVT is filename, ED predictions, ES predictions
                                 if filename == "EchoPhaseDetection.csv":
                                     rowED = rows[rows.iloc[:, 2] == "ED"]
