@@ -248,8 +248,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                         else:
                             rowED = rows[rows.iloc[:, 2] == "ED"]
                             rowES = rows[rows.iloc[:, 2] == "ES"]
-                            ED_Predictions = pd.eval(rowED["ED_Predictions"].values[0])
-                            ES_Predictions = pd.eval(rowES["ES_Predictions"].values[0])
+                            print("pd.eval(rowED.values[3]): ", pd.eval(rowED.values[3]))
+                            quit()
+                            ED_Predictions = pd.eval(rowED.values[3])
+                            ES_Predictions = pd.eval(rowES.values[3])
                             if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
                                 # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
                                 continue
