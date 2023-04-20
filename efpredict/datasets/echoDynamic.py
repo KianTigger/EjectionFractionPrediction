@@ -273,6 +273,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             print("TODO TODO TODO Will generate phase information for these videos.")
             self.generate_phase_predictions(missing_values)
 
+            #remove the missing values from self.fnames #TODO remove once phase information is generated
+            self.fnames = [name for name in self.fnames if name not in missing_values]
+
+
         self.check_missing_files()
 
         
@@ -282,7 +286,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
     def check_missing_files(self):
         # Check that files are present
-        missing = set(self.fnames) - \
+        fnames_with_ext = [fname + ".avi" for fname in self.fnames]
+        missing = set(fnames_with_ext) - \
             set(os.listdir(os.path.join(self.root, "Videos")))
         if len(missing) != 0:
             print("{} videos could not be found in {}:".format(
