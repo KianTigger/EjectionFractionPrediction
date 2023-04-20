@@ -180,9 +180,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, filename)) as f:
             data = pd.read_csv(f, index_col=False)
 
-        # print first 5 rows of the dataframe.
-        print(data.head())
-
         data['Split'].map(lambda x: x.upper())
 
         if self.split != "ALL":
