@@ -262,8 +262,11 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                                     ED_Predictions = pd.eval(rowED.values[0][3])
                                     ES_Predictions = pd.eval(rowES.values[0][3])
                                 else:
-                                    ED_Predictions = pd.eval(rows.values[0][2])
-                                    ES_Predictions = pd.eval(rows.values[0][3])
+                                    print(rows)
+                                    print(rows.values)
+                                    print(rows.values[0])
+                                    ED_Predictions = pd.eval(rows.values[0][1])
+                                    ES_Predictions = pd.eval(rows.values[0][2])
                                     print("ED Predictions: ", ED_Predictions)
                                     print("ES Predictions: ", ES_Predictions)
                                     quit()
