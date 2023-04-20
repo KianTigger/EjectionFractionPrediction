@@ -246,6 +246,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                             self.phase_values[name] = [list(range(
                                 0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                         else:
+                            print("rows", rows)
                             rowED = rows[rows.iloc[:, 2] == "ED"]
                             rowES = rows[rows.iloc[:, 2] == "ES"]
                             print("rowED", rowED)
