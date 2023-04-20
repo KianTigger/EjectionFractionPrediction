@@ -233,13 +233,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                         # if self.phase_values[name] has already been set, then skip
                         if name in self.phase_values:
                             continue
-                        print(f"Getting phase labels for {name} from {filename}")
-                        #print row 0 of data
-                        print(data.iloc[0])
-                        #print row 1 of data
-                        print(data.iloc[1])
-                        row = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
-                        if len(row) == 0:
+                        rows = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
+                        if len(rows) == 0:
                             print(f"Warning: {name} not found in {filename}, skipping")
                             continue
                         if self.createAllClips:
@@ -251,8 +246,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                             self.phase_values[name] = [list(range(
                                 0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
                         else:
-                            ED_Predictions = pd.eval(row["ED_Predictions"].values[0])
-                            ES_Predictions = pd.eval(row["ES_Predictions"].values[0])
+                            rowED = rows[rows.iloc[:, 2] == "ED"]
+                            rowES = rows[rows.iloc[:, 2] == "ES"]
+                            ED_Predictions = pd.eval(rowED["ED_Predictions"].values[0])
+                            ES_Predictions = pd.eval(rowES["ES_Predictions"].values[0])
                             if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
                                 # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
                                 continue
