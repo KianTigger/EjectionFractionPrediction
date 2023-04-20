@@ -180,12 +180,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, filename)) as f:
             data = pd.read_csv(f, index_col=False)
 
-        print("Data size123: ", len(data))
-
         # print first 5 rows of the dataframe.
         print(data.head())
-
-
 
         data['Split'].map(lambda x: x.upper())
 
@@ -193,12 +189,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             rng = np.random.default_rng(42)  # Use a fixed random seed for reproducibility
             if self.split != "UNLABELLED" and self.split != "UNLABEL":
                 data = data[data["Split"] == self.split]
-                print("Data size: ", len(data))
                 if self.split != "TEST":
                     indices = rng.choice(len(data), len(data), replace=False)
                     labelled_indices = indices[:int(len(indices) * self.percentage_dynamic_labelled / 100)]
                     data = data.iloc[labelled_indices]
-
 
             else:
                 # Unlabelled data
@@ -212,10 +206,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                     unlabelled_data.append(split_data.iloc[unlabelled_indices])
                 
                 data = pd.concat(unlabelled_data)
-
-        if self.split == "TRAIN":
-            print("Training data size: ", len(data))
-            print("Training data size total: ", len(data[data["Split"] == "TRAIN"]))
 
         self.header = data.columns.tolist()
         self.fnames = data["FileName"].tolist()

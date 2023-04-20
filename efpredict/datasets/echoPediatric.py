@@ -158,14 +158,17 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                         f.write(
                             f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
                     else:
-                        for j in range(min(len(ED_Predictions), len(ES_Predictions))):
+                        for j in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
                             # ED_Prediciton must be less than ES_Prediciton
                             if ED_Predictions[j] > ES_Predictions[j]:
                                 continue
 
                             # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
+                            #TODO need another way of getting the fps
                             # if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
                             #     continue
+                            if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * 50:
+                                continue
                             # new_name = f"{name}_phase_{j}"
                             f.write(
                                 f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
@@ -195,7 +198,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def get_EF_Labels(self, filename="FileList.csv"):
 
-        data = self.dataset
+        # Load video-level labels
+        with open(os.path.join(self.root, filename)) as f:
+            data = pd.read_csv(f, index_col=False)
 
         if self.split != "ALL":
             if self.split == "TRAIN":
@@ -226,8 +231,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.outcome = data.values.tolist()
 
     def get_phase_labels(self, outputFilename="PhasesList.csv"):
-
-
         try:
             if os.path.exists(outputFilename):
                 existing_data = pd.read_csv(outputFilename)
@@ -238,7 +241,6 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         predictionFiles = ["UVT_M_REG.csv", "UVT_R_CLA.csv", "UVT_R_REG.csv", "UVT_M_CLA.csv", "EchoPhaseDetection.csv"]
         output_data = []
-
 
         for dataType in ["A4C", "PSAX"]:
             for filename in predictionFiles:
