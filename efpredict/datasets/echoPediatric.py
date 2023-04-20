@@ -243,6 +243,9 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                         # Go through each name in self.fnames, and find the corresponding row in data,
                         # then add the ED and ES predictions to self.phase_values if they are not empty lists
                         for name in self.fnames:
+                            # if name doesn't have a suffix, add .avi
+                            if os.path.splitext(name)[1] == "":
+                                name = name + ".avi"
                             # if self.phase_values[name] has already been set, then skip
                             if name in self.phase_values:
                                 continue
