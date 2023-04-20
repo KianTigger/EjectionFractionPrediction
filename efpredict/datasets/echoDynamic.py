@@ -154,7 +154,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                     f.write(
                         f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
                 else:
-                    for j in range(min(len(ED_Predictions), len(ES_Predictions))):
+                    for j in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
                         # ED_Prediciton must be less than ES_Prediciton
                         if ED_Predictions[j] > ES_Predictions[j]:
                             continue
@@ -185,7 +185,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         # print first 5 rows of the dataframe.
         print(data.head())
 
-        
+
 
         data['Split'].map(lambda x: x.upper())
 
