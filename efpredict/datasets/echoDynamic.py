@@ -131,7 +131,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
         self.get_phase_labels()
 
-
         # Create a new csv file with the new file names, overwrite if it already exists
         with open(os.path.join(self.root, outputfilename), 'w', newline='') as f:
             headers = data.columns.values.tolist() + ['StartFrame', 'EndFrame']
@@ -259,11 +258,6 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             except FileNotFoundError:
                 print(f"Warning: {filename} not found, skipping")
 
-        # #Write the phase labels to a file
-        # with open(os.path.join(self.root, outputFilename), "w") as f:
-        #     for name in self.phase_values:
-        #         f.write(f"{name},{','.join(map(str, self.phase_values[name][0]))},{','.join(map(str, self.phase_values[name][1]))}\n")
-
         # check if any of the names in self.fnames are not in self.phase_values
         # if so, then add them to self.phase_values with empty lists
         missing_values = []
@@ -276,12 +270,10 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         if len(missing_values) > 0:
             print("Missing phase information for {} videos.".format(
                 len(missing_values)))
-            print("TODO TODO TODO Will generate phase information for these videos.")
             self.generate_phase_predictions(missing_values)
 
             #remove the missing values from self.fnames #TODO remove once phase information is generated
             self.fnames = [name for name in self.fnames if name not in missing_values]
-
 
         self.check_missing_files()
 

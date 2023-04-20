@@ -125,13 +125,13 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
         self.check_missing_files()
 
-    def create_EF_Labels(self, filename="FileList.csv", outputfilename="PediatricFileListPhaseClips.csv"):
-
-        self.get_phase_labels()
+    def create_EF_Labels(self, filename="FileList.csv", outputfilename="FileListPhaseClips.csv"):
 
         data = self.dataset
 
         self.fnames = data["FileName"].tolist()
+
+        self.get_phase_labels()
 
         for dataset, datatype in [[self.dfa4c, 'A4C'], [self.dfpsax, 'PSAX']]:
 
@@ -226,50 +226,66 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.outcome = data.values.tolist()
 
     def get_phase_labels(self, filename="PhasesList.csv", predictionsFileName="PhasesPredictionsList.csv"):
-        data = None
+        
+        predictionFiles = ["UVT_M_REG.csv", "UVT_R_CLA.csv", "UVT_R_REG.csv", "UVT_M_CLA.csv", "EchoPhaseDetection.csv"]
 
-        try:
-            with open(os.path.join(self.root, filename)) as f:
-                data = pd.read_csv(f)
+        for filename in predictionFiles:
 
-        except FileNotFoundError:
             try:
-                with open(os.path.join(self.root, predictionsFileName)) as f:
-                    data = pd.read_csv(f)
+                with open(os.path.join(self.root, filename)) as f:
+                    data = pd.read_csv(f, index_col=False, header=None)
+
+                    # Go through each name in self.fnames, and find the corresponding row in data,
+                    # then add the ED and ES predictions to self.phase_values if they are not empty lists
+                    for name in self.fnames:
+                        # if self.phase_values[name] has already been set, then skip
+                        if name in self.phase_values:
+                            continue
+                        rows = data[(data.iloc[:, 0] == name) | (data.iloc[:, 1] == name)]
+                        if len(rows) == 0:
+                            print(f"Warning: {name} not found in {filename}, skipping")
+                            continue
+                        if self.createAllClips:
+                            # need another way of getting number of frames
+                            print("TODO: get number of frames")
+                            quit()
+                            number_of_frames = "TODO" #TODO
+                            length = self.length
+                            self.phase_values[name] = [list(range(
+                                0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
+                        else:
+                            rowED = rows[rows.iloc[:, 2] == "ED"]
+                            rowES = rows[rows.iloc[:, 2] == "ES"]
+                            ED_Predictions = pd.eval(rowED.values[0][3])
+                            ES_Predictions = pd.eval(rowES.values[0][3])
+                            if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
+                                # print(f"Warning: {name} has no ED or ES predictions in {filename}, skipping")
+                                continue
+                            self.phase_values[name] = [ED_Predictions, ES_Predictions]
 
             except FileNotFoundError:
-                print("No phase information found. TODO Will generate phase information.")
-                # TODO, generate phase information from here
+                print(f"Warning: {filename} not found, skipping")
 
-        if data is not None:
-            missing_values = []
-            for _, row in data.iterrows():
-                if self.createAllClips:
-                    number_of_frames = row["NumberOfFrames"]
-                    length = self.length
-                    # TODO, change this to be a list of tuples
-                    self.phase_values[filename] = [list(range(
-                        0, number_of_frames - length + 1)), list(range(length, number_of_frames + 1))]
-                else:
-                    filename = row[0]
-                    ED_Predictions = pd.eval(row[1])
-                    ES_Predictions = pd.eval(row[2])
-                    if len(ED_Predictions) == 0 or len(ES_Predictions) == 0:
-                        missing_values.append(filename)
-                    self.phase_values[filename] = [
-                        ED_Predictions, ES_Predictions]
 
-            if len(missing_values) > 0:
-                print("Missing phase information for {} videos.".format(
-                    len(missing_values)))
-                print("TODO TODO TODO Will generate phase information for these videos.")
-                self.generate_phase_predictions(missing_values)
-                # TODO, generate phase information from here
 
-            self.check_missing_files()
+        # check if any of the names in self.fnames are not in self.phase_values
+        # if so, then add them to self.phase_values with empty lists
+        missing_values = []
+        for name in self.fnames:
+            if name not in self.phase_values:
+                self.phase_values[name] = [[], []]
+                missing_values.append(name)  
 
-        else:
-            self.generate_phase_predictions()
+        if len(missing_values) > 0:
+            print("Missing phase information for {} videos.".format(
+                len(missing_values)))
+            self.generate_phase_predictions(missing_values)
+
+            #remove the missing values from self.fnames #TODO remove once phase information is generated
+            self.fnames = [name for name in self.fnames if name not in missing_values]
+
+        self.check_missing_files()
+
 
     def generate_phase_predictions(self, filenames=None):
         # TODO generate phase information
@@ -277,16 +293,19 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def check_missing_files(self):
         # Check that files are present in A4C and PSAX directories
-        missing_a4c = set(self.dfa4c['FileName']) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
-        missing_psax = set(self.dfpsax['FileName']) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
+        fnames_with_ext = [fname + (".avi" if not fname.endswith(".avi") else "") for fname in self.fnames]
+
+        missing_a4c = set(fnames_with_ext) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
+        missing_psax = set(fnames_with_ext) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
         missing = missing_a4c.union(missing_psax)
-        
+
         if len(missing) != 0:
             print("{} videos could not be found in {} or {}:".format(
                 len(missing), os.path.join(self.root, "A4C", "Videos"), os.path.join(self.root, "PSAX", "Videos")))
             for f in sorted(missing):
                 print("\t", f)
             raise FileNotFoundError(os.path.join(self.root, sorted(missing)[0]))
+
 
     def __getitem__(self, index):
         # Get video path
