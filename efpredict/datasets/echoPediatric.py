@@ -134,46 +134,41 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         self.get_phase_labels()
 
         with open(os.path.join(self.root, outputfilename), 'w', newline='') as f:
-            headers = dataset.columns.values.tolist() + ['StartFrame', 'EndFrame']
+            headers = data.values.tolist() + ['StartFrame', 'EndFrame']
             f.write(','.join(headers) + '\n')
 
-            for dataset, datatype in [[self.dfa4c, 'A4C'], [self.dfpsax, 'PSAX']]:
+            for row in data.iterrows():
+                name = row[1]["FileName"]
+                try:
+                    ED_Predictions = self.phase_values[name][0]
+                    ES_Predictions = self.phase_values[name][1]
+                except KeyError:
+                    # print(f"Warning: {name} has no ED or ES predictions!")
+                    ED_Predictions = [0]
+                    ES_Predictions = [self.length]
+                    self.phase_values[name] = [ED_Predictions, ES_Predictions]
+                    
+                written_line = False
+                if not ED_Predictions or not ES_Predictions:
+                    # TODO fix this, by generating the phase labels
+                    # print(f"Warning: {name} has no ED or ES predictions!")
+                    f.write(
+                        f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
+                else:
+                    for j in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
+                        # ED_Prediciton must be less than ES_Prediciton
+                        if ED_Predictions[j] > ES_Predictions[j]:
+                            continue
 
-                # Create a new csv file with the new file names, overwrite if it already exists
-
-                for row in dataset.iterrows():
-                    name = row[1]["FileName"]
-                    try:
-                        ED_Predictions = self.phase_values[name][0]
-                        ES_Predictions = self.phase_values[name][1]
-                    except KeyError:
-                        # print(f"Warning: {name} has no ED or ES predictions!")
-                        ED_Predictions = [0]
-                        ES_Predictions = [self.length]
-                        self.phase_values[name] = [ED_Predictions, ES_Predictions]
-                        
-                    written_line = False
-                    if not ED_Predictions or not ES_Predictions:
-                        # TODO fix this, by generating the phase labels
-                        # print(f"Warning: {name} has no ED or ES predictions!")
+                        # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
+                        # need another way to get fps for this dataset
+                        # if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
+                        if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * 50:       
+                            continue
+                        # new_name = f"{name}_phase_{j}"
                         f.write(
-                            f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
-                    else:
-                        for j in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
-                            # ED_Prediciton must be less than ES_Prediciton
-                            if ED_Predictions[j] > ES_Predictions[j]:
-                                continue
-
-                            # abs(ED_Prediciton - ES_Prediciton) must be greater than 1/4 of the fps
-                            #TODO need another way of getting the fps
-                            # if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
-                            #     continue
-                            if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * 50:
-                                continue
-                            # new_name = f"{name}_phase_{j}"
-                            f.write(
-                                f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
-                            written_line = True
+                            f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
+                        written_line = True
 
                     if not written_line:
                         # TODO fix this, by generating the phase labels
