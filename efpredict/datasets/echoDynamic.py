@@ -286,7 +286,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
 
     def check_missing_files(self):
         # Check that files are present
-        fnames_with_ext = [fname for fname in self.fnames]
+        fnames_with_ext = [fname + (".avi" if not fname.endswith(".avi") else "") for fname in self.fnames]
         missing = set(fnames_with_ext) - \
             set(os.listdir(os.path.join(self.root, "Videos")))
         if len(missing) != 0:
