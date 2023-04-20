@@ -180,6 +180,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         with open(os.path.join(self.root, filename)) as f:
             data = pd.read_csv(f, index_col=False)
 
+        print("Data size123: ", len(data))
+
         data['Split'].map(lambda x: x.upper())
 
         if self.split != "ALL":
