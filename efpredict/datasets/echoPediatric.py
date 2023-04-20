@@ -298,11 +298,11 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
 
     def check_missing_files(self):
         # Check that files are present in A4C and PSAX directories
-        fnames_with_ext = [fname + (".avi" if not fname.endswith(".avi") else fname) for fname in self.fnames]
+        fnames_with_ext = [fname + (".avi" if not fname.endswith(".avi") else "") for fname in self.fnames]
 
         missing_a4c = set(fnames_with_ext) - set(os.listdir(os.path.join(self.root, "A4C", "Videos")))
         missing_psax = set(fnames_with_ext) - set(os.listdir(os.path.join(self.root, "PSAX", "Videos")))
-        missing = missing_a4c.union(missing_psax)
+        missing = missing_a4c.intersection(missing_psax)
 
         if len(missing) != 0:
             print("{} videos could not be found in {} or {}:".format(
