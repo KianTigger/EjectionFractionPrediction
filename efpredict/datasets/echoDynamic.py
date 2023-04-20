@@ -186,6 +186,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             rng = np.random.default_rng(42)  # Use a fixed random seed for reproducibility
             if self.split != "UNLABELLED" and self.split != "UNLABEL":
                 data = data[data["Split"] == self.split]
+                print("Data size: ", len(data))
                 if self.split != "TEST":
                     indices = rng.choice(len(data), len(data), replace=False)
                     labelled_indices = indices[:int(len(indices) * self.percentage_dynamic_labelled / 100)]
