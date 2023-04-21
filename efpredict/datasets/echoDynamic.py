@@ -71,7 +71,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                  pad=None,
                  noise=None,
                  target_transform=None,
-                 use_phase_clips=True,
+                 use_phase_clips=False,
                  external_test_location=None):
         if root is None:
             root = efpredict.config.DATA_DIR
@@ -154,7 +154,8 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                     f.write(
                         f"{','.join(map(str, row[1].values.tolist()))},0,0,\n")
                 else:
-                    for j in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
+                    num_clips = min(len(ED_Predictions), len(ES_Predictions), self.clips)
+                    for j in range(num_clips):
                         # ED_Prediciton must be less than ES_Prediciton
                         if ED_Predictions[j] > ES_Predictions[j]:
                             continue
@@ -163,6 +164,11 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                         if abs(ED_Predictions[j] - ES_Predictions[j]) < 0.25 * row[1]["FPS"]:
                             continue
                         # new_name = f"{name}_phase_{j}"
+                        if num_clips > 1:
+                            new_name = f"{name}_phase_{j}"
+                        else:
+                            new_name = name
+                        row[1]["FileName"] = new_name
                         f.write(
                             f"{','.join(map(str, row[1].values.tolist()))},{ED_Predictions[j]},{ES_Predictions[j]},\n")
                         written_line = True
@@ -305,6 +311,17 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
                 self.root, "Videos", sorted(missing)[0]))
 
     def __getitem__(self, index):
+
+        # check phase number
+        # if fnames[index] contains _phase_ then use the number following the last _
+        # otherwise use 0
+        if "_phase_" in self.fnames[index]:
+            phase = int(self.fnames[index].split("_")[-1])
+            # now remove the _phase_# from the filename
+            self.fnames[index] = "_".join(self.fnames[index].split("_")[:-1])
+        else:
+            phase = 0
+        
         # Get video path
         video_path = self.video_path(index)
 
@@ -324,8 +341,13 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         # TODO see if this is needed
         video = self.set_frames(video, length)
 
-        video = self.select_clips_phase(video, length, index)
-        # video = self.select_clips(video, length)
+        if self.use_phase_clips:
+            if phase != 0:
+                video = self.select_clip_phase(video, length, index, phase)
+            else:
+                video = self.select_clips_phase(video, length, index)
+        else:
+            video = self.select_clips(video, length)
 
         target = self.gather_targets(index)
 
@@ -389,6 +411,36 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
             new_video = np.stack(new_video)
 
         return new_video
+    
+    def select_clip_phase(self, video, length, index, phase, outputfilename="FileListPhaseClips.csv"):
+        # if FileListPhaseClips exists, use it and return the clip
+        # otherwise, call select_clips_phase and return the clip
+        if os.path.exists(os.path.join(self.root, outputfilename)):
+            with open(os.path.join(self.root, outputfilename)) as f:
+                data = pd.read_csv(f)
+        else:
+            return self.select_clips_phase(video, length, index)
+        
+        # get the clip from the file
+        # get the video name
+        key = self.fnames[index]
+        # if key ends with .avi, remove it
+        if key.endswith(".avi"):
+            key = key[:-4]
+
+        # get the rows for this video where data[0] contains the key
+        rows = data[data[0].str.contains(key)]
+        # get the row for this phase
+        row = rows[phase]
+        # get the start and end frames
+        start = int(row[1])
+        end = int(row[2])
+
+        # clip = video, from start to end, regardless of length
+        clip = video[:, start:end, :, :]
+
+        return clip
+    
 
     def select_clips_phase(self, video, length, index):
         c, f, h, w = video.shape
@@ -409,7 +461,7 @@ class EchoDynamic(torchvision.datasets.VisionDataset):
         # for each phase, generate a clip from the video and add to the list
         new_video = ()
 
-        for i in range(min(len(ED_Predictions), len(ES_Predictions))):
+        for i in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
             start = ED_Predictions[i]
             end = ES_Predictions[i]
 

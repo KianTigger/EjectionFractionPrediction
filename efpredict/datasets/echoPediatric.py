@@ -71,7 +71,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
                  pad=None,
                  noise=None,
                  target_transform=None,
-                 use_phase_clips=True,
+                 use_phase_clips=False,
                  external_test_location=None):
         if root is None:
             root = efpredict.config.PEDIATRIC_DIR
@@ -425,7 +425,7 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
         # for each phase, generate a clip from the video and add to the list
         new_video = ()
 
-        for i in range(min(len(ED_Predictions), len(ES_Predictions))):
+        for i in range(min(len(ED_Predictions), len(ES_Predictions), self.clips)):
             start = ED_Predictions[i]
             end = ES_Predictions[i]
 
