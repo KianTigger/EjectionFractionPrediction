@@ -195,8 +195,18 @@ class EchoPediatric(torchvision.datasets.VisionDataset):
     def get_EF_Labels(self, filename="FileList.csv"):
 
         # Load video-level labels
-        with open(os.path.join(self.root, filename)) as f:
-            data = pd.read_csv(f, index_col=False)
+        with open(os.path.join(self.root, 'A4C', filename)) as f:
+            a4cdata = pd.read_csv(f, index_col=False)
+
+        with open(os.path.join(self.root, 'PSAX', filename)) as f:
+            psaxdata = pd.read_csv(f, index_col=False)
+
+        if self.data_type == "A4C":
+            data = a4cdata
+        elif self.data_type == "PSAX":
+            data = psaxdata
+        else:
+            data = pd.concat([a4cdata, psaxdata]).reset_index(drop=True)
 
         if self.split != "ALL":
             if self.split == "TRAIN":
