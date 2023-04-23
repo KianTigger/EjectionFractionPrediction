@@ -193,8 +193,6 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
     if scheduler_params is None or scheduler_type is None:
         scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
     elif scheduler_type == "StepLR":
-        print("Using StepLR")
-        print(scheduler_params)
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=lr_step_period, **scheduler_params)
     elif scheduler_type == "ExponentialLR":
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=scheduler_params["gamma"], **scheduler_params)
