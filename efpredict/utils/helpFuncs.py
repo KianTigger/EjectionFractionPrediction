@@ -120,7 +120,7 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
     torch.manual_seed(seed)
 
     if scheduler_params is not None:
-        scheduler_type = scheduler_params.pop("type")
+        scheduler_type = scheduler_params.pop("scheduler_type")
         lr_step_period = scheduler_params.pop("lr_step_period")
     else:
         scheduler_type = None
