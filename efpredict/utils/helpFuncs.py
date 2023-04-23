@@ -17,9 +17,14 @@ def get_checkpoint(model, optim, scheduler, output, f):
     epoch_resume = 0
     step_resume = 0
     bestLoss = float("inf")
+    only_best = False
     try:
         # Attempt to load checkpoint
-        checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
+        try:
+            checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
+        except FileNotFoundError:
+            checkpoint = torch.load(os.path.join(output, "best.pt"))
+            only_best = True
         model.load_state_dict(checkpoint['state_dict'])
         optim.load_state_dict(checkpoint['opt_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_dict'])
@@ -190,8 +195,6 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
                             momentum=0.9, weight_decay=weight_decay)
     if lr_step_period is None:
         lr_step_period = math.inf
-
-
 
 
     # Set up learning rate scheduler based on scheduler_type

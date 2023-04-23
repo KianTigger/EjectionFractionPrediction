@@ -149,61 +149,62 @@ def process_split_string(value):
 def run_loops(output, device, model, optim, scheduler, dataset, num_epochs, batch_size, num_workers, period, frames, run_test, loss_type, alpha, labelled_ratio, unlabelled_ratio):
     # Run training and testing loops
     with open(os.path.join(output, "log.csv"), "a") as f:
-        model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
-        if epoch_resume == 0 or (epoch_resume > 0 and step_resume == 0):
-            epoch_resume += 1
-        if epoch_resume > num_epochs and run_test:
-            print("Running tests")
-        else:
-            print("Resuming from epoch #{}".format(epoch_resume), flush=True)
-        for epoch in range(epoch_resume, num_epochs + 1):
-            print("Epoch #{}".format(epoch), flush=True)
-            for phase in ['train', 'val']:
-                start_time = time.time()
-                for i in range(torch.cuda.device_count()):
-                    torch.cuda.reset_peak_memory_stats(i)
-                               
-                labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
-                unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
-                
-                labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
-                unlabelled_batch_size = batch_size - labelled_batch_size
-                
-                if phase == "train" and unlabelled_batch_size > 0 and len(unlabelled_dataset) > 0:
-                    labelled_dataloader = DataLoader(
-                        labelled_dataset, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True,
-                        pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
-                    unlabelled_dataloader = DataLoader(
-                        unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
-                        pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
-                else:
-                    labelled_dataloader = DataLoader(
-                        labelled_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True,
-                        pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
-                    unlabelled_dataloader = None
+        # if only best.pt exists, run tests, otherwise resume training
+        if not(os.path.exists(os.path.join(output, "best.pt")) and not os.path.exists(os.path.join(output, "checkpoint.pt"))):
+            model, optim, scheduler, epoch_resume, step_resume, bestLoss = helpFuncs.get_checkpoint(model, optim, scheduler, output, f)
+            if epoch_resume == 0 or (epoch_resume > 0 and step_resume == 0):
+                epoch_resume += 1
+            if epoch_resume > num_epochs and run_test:
+                print("Running tests")
+            else:
+                print("Resuming from epoch #{}".format(epoch_resume), flush=True)
+            for epoch in range(epoch_resume, num_epochs + 1):
+                print("Epoch #{}".format(epoch), flush=True)
+                for phase in ['train', 'val']:
+                    start_time = time.time()
+                    for i in range(torch.cuda.device_count()):
+                        torch.cuda.reset_peak_memory_stats(i)
+                                
+                    labelled_dataset = LabelledDataset(labelled_data=dataset[phase])
+                    unlabelled_dataset = UnlabelledDataset(unlabelled_data=dataset["unlabelled"])
                     
-                checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": bestLoss, "bestLoss": bestLoss, "scheduler": scheduler}
-                loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, loss_type, alpha, unlabelled_dataloader=unlabelled_dataloader)
-                f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
-                                                              phase,
-                                                              loss,
-                                                              sklearn.metrics.r2_score(y, yhat),
-                                                              time.time() - start_time,
-                                                              y.size,
-                                                              sum(torch.cuda.max_memory_allocated() for _ in range(torch.cuda.device_count())),
-                                                              sum(torch.cuda.max_memory_reserved() for _ in range(torch.cuda.device_count())),
-                                                              batch_size))
-                f.flush()
+                    labelled_batch_size = max(1, int(batch_size * labelled_ratio / (labelled_ratio + unlabelled_ratio)))
+                    unlabelled_batch_size = batch_size - labelled_batch_size
+                    
+                    if phase == "train" and unlabelled_batch_size > 0 and len(unlabelled_dataset) > 0:
+                        labelled_dataloader = DataLoader(
+                            labelled_dataset, batch_size=labelled_batch_size, num_workers=num_workers, shuffle=True,
+                            pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+                        unlabelled_dataloader = DataLoader(
+                            unlabelled_dataset, batch_size=unlabelled_batch_size, num_workers=num_workers, shuffle=True, 
+                            pin_memory=(device.type == "cuda"), drop_last=True,  collate_fn=helpFuncs.custom_collate)
+                    else:
+                        labelled_dataloader = DataLoader(
+                            labelled_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True,
+                            pin_memory=(device.type == "cuda"), drop_last=(phase == "train"))
+                        unlabelled_dataloader = None
+                        
+                    checkpoint_args = {"period": period, "frames": frames, "epoch": epoch, "output": output, "loss": bestLoss, "bestLoss": bestLoss, "scheduler": scheduler}
+                    loss, yhat, y = efpredict.utils.EFPredict.run_epoch(model, labelled_dataloader, phase == "train", optim, device, step_resume, checkpoint_args, loss_type, alpha, unlabelled_dataloader=unlabelled_dataloader)
+                    f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,
+                                                                phase,
+                                                                loss,
+                                                                sklearn.metrics.r2_score(y, yhat),
+                                                                time.time() - start_time,
+                                                                y.size,
+                                                                sum(torch.cuda.max_memory_allocated() for _ in range(torch.cuda.device_count())),
+                                                                sum(torch.cuda.max_memory_reserved() for _ in range(torch.cuda.device_count())),
+                                                                batch_size))
+                    f.flush()
 
-                step_resume = 0
+                    step_resume = 0
 
-
-            scheduler.step()
+                scheduler.step()
+                
+                bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, optim, scheduler)
             
-            bestLoss = helpFuncs.save_checkpoint(model, period, frames, epoch, 0, output, loss, bestLoss, optim, scheduler)
-        
-        # Once the training is done, delete the checkpoint file, as we have the best weights saved
-        helpFuncs.delete_checkpoint(output)
+            # Once the training is done, delete the checkpoint file, as we have the best weights saved
+            helpFuncs.delete_checkpoint(output)
 
         # Load best weights
         if num_epochs != 0:
