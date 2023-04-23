@@ -80,16 +80,50 @@ def generate_model(model_name, pretrained):
         print("Using random weights")
     return model
 
+
+
 def setup_model(seed, model_name, pretrained, device, weights, frames, 
                 period, output, weight_decay, lr, lr_step_period, 
                 num_epochs, labelled_ratio=False, unlabelled_ratio=False,
                 data_type=None, percentage_dynamic_labelled=None, 
                 train_val_test_unlabel_split=None, loss_type=None, 
                 alpha=None, num_augmented_videos=None, dropout_only=None, 
-                rotation_only=None, dropout_int=None, rotation_int=None):
+                rotation_only=None, dropout_int=None, rotation_int=None,
+                scheduler_params=None):
+    
+    ###
+    # StepLR: {
+    #   "scheduler_type": "StepLR",
+    #   "lr_step_period": 15,
+    #   "gamma": 0.1}
+    # ExponentialLR:{
+    #   "scheduler_type": "ExponentialLR",
+    #   "gamma": 0.95}
+    # CosineAnnealingLR:{
+    #   "scheduler_type": "CosineAnnealingLR",
+    #   "T_max": 50,
+    #   "eta_min": 1e-5}
+    # ReduceLROnPlateau:{
+    #   "scheduler_type": "ReduceLROnPlateau",
+    #   "factor": 0.1,
+    #   "patience": 10,
+    #   "min_lr": 1e-5,
+    #   "cooldown": 0,
+    #   "threshold": 1e-4,
+    #   "threshold_mode": "rel",
+    #   "verbose": true}
+    # python script.py --scheduler_params '{"scheduler_type": "StepLR", "lr_step_period": 15, "gamma": 0.1}'
+    ###
+
     # Seed RNGs
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+    if scheduler_params is not None:
+        scheduler_type = scheduler_params.pop("type")
+        lr_step_period = scheduler_params.pop("lr_step_period")
+    else:
+        scheduler_type = None
     
     # TODO make output more specific so it doesn't overwrite previous runs, e.g. foldername contains features, model, and hyperparameters
     # Set default output directory
@@ -118,6 +152,8 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
                 output_dir += f"-rotationOnly-{rotation_only}/rotationInt-{rotation_int}/"
             else:
                 output_dir += f"/dropoutInt-{dropout_int}-rotationInt-{rotation_int}/"
+        if scheduler_type != None:
+            output_dir += f"-schedulerType-{scheduler_type} -lr-{lr}-lrStepPeriod-{lr_step_period}-weightdecay-{weight_decay}/"
             
         output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
 
@@ -149,7 +185,26 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
                             momentum=0.9, weight_decay=weight_decay)
     if lr_step_period is None:
         lr_step_period = math.inf
-    scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
+
+
+
+
+    # Set up learning rate scheduler based on scheduler_type
+    if scheduler_params is None or scheduler_type is None:
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
+    elif scheduler_type == "StepLR":
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, **scheduler_params)
+    elif scheduler_type == "ExponentialLR":
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, **scheduler_params)
+    elif scheduler_type == "CosineAnnealingLR":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, **scheduler_params)
+    elif scheduler_type == "ReduceLROnPlateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, **scheduler_params)
+    else:
+        print("Invalid scheduler type. Using StepLR.")
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
+
+        
 
     return output, device, model, optim, scheduler
 

@@ -1,3 +1,4 @@
+import json
 import os
 import math
 import time
@@ -49,6 +50,8 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights, r3d_18, R
 @click.option("--dropout_int", type=int, default=0)
 @click.option("--rotation_only", default=False, is_flag=True)
 @click.option("--rotation_int", type=int, default=0)
+@click.option("--scheduler_params", type=str, default=None, help="JSON string containing scheduler hyperparameters")
+
 
 def run(
     data_dir=None,
@@ -85,6 +88,8 @@ def run(
     lr=1e-4,
     weight_decay=1e-4,
     lr_step_period=15,
+    scheduler_params=None,
+
     frames=32,
     period=2,
     num_train_patients=None,
@@ -105,6 +110,9 @@ def run(
     dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, 
                                     train_val_test_unlabel_split, augmented_args=augmented_args,
                                     )
+    
+    if scheduler_params is not None:
+        scheduler_params = json.loads(scheduler_params)
 
     output, device, model, optim, scheduler = helpFuncs.setup_model(seed, 
             model_name, pretrained, device, weights, frames, 
@@ -112,7 +120,9 @@ def run(
             num_epochs, labelled_ratio, unlabelled_ratio, 
             data_type, percentage_dynamic_labelled, 
             train_val_test_unlabel_split, loss_type, 
-            alpha, num_augmented_videos, dropout_only, rotation_only, dropout_int, rotation_int)
+            alpha, num_augmented_videos, dropout_only, 
+            rotation_only, dropout_int, rotation_int,
+            scheduler_params=scheduler_params)
 
     success = False
 
