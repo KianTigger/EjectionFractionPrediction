@@ -160,6 +160,7 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
             output_dir += "/"
             
         output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
+        print("Output directory: ", output)
 
     os.makedirs(output, exist_ok=True)
 
