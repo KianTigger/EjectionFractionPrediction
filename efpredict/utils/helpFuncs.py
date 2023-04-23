@@ -193,11 +193,11 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
     if scheduler_params is None or scheduler_type is None:
         scheduler = torch.optim.lr_scheduler.StepLR(optim, lr_step_period)
     elif scheduler_type == "StepLR":
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, **scheduler_params)
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=scheduler_params["step_size"], **scheduler_params)
     elif scheduler_type == "ExponentialLR":
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, **scheduler_params)
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=scheduler_params["gamma"], **scheduler_params)
     elif scheduler_type == "CosineAnnealingLR":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, **scheduler_params)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=scheduler_params["T_max"], **scheduler_params)
     elif scheduler_type == "ReduceLROnPlateau":
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, **scheduler_params)
     else:
