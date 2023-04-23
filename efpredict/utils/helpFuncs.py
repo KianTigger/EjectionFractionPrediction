@@ -154,6 +154,10 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
                 output_dir += f"/dropoutInt-{dropout_int}-rotationInt-{rotation_int}/"
         if scheduler_type != None:
             output_dir += f"-schedulerType-{scheduler_type} -lr-{lr}-lrStepPeriod-{lr_step_period}-weightdecay-{weight_decay}/"
+        if scheduler_params != None:
+            for key, value in scheduler_params.items():
+                output_dir += f"{key}-{value}"
+            output_dir += "/"
             
         output = os.path.join(output_dir, f"{model_name}_{frames}_{period}_{pretrained_str}")
 
