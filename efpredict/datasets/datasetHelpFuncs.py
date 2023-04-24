@@ -17,13 +17,13 @@ def augment_video(video, num_augmented_videos=0, dropout_only=False, rotation_on
     if isinstance(dropout_int, int) and 0 <= dropout_int <= 3:
         dropout_percentages = dropout_percentages[dropout_int]
     else:
-        dropout_percentages = dropout_percentages[0]
+        dropout_percentages = dropout_percentages[1]
 
     rotation_angles = [[1, 2, 3, -1, -2, -3], [2, 5, 8, -2, -5, -8], [5, 10, 15, -5, -10, -15]]
     if isinstance(rotation_int, int) and 0 <= rotation_int <= 2:
         rotation_angles = rotation_angles[rotation_int]
     else:
-        rotation_angles = rotation_angles[0]
+        rotation_angles = rotation_angles[2]
 
     if dropout_only:
         augmentations = [('pixel_dropout', percentage) for percentage in dropout_percentages]
@@ -50,6 +50,10 @@ def augment_video(video, num_augmented_videos=0, dropout_only=False, rotation_on
             augmented_video = video * mask
             
         videos.append(augmented_video)
+    
+    # if num_augmented_videos == 1: change videos to [video] with a 50% chance
+    if num_augmented_videos == 1 and random.random() < 0.5:
+        videos = [video]
     
     return videos
 
