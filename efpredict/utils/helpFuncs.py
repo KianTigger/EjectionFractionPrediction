@@ -225,12 +225,12 @@ def mean_and_std(data_dir, task, frames, period):
             }
     return kwargs
 
-def get_dataset(data_dir, kwargs, frames, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.8, 0.2, 0, 0], augmented_args=[0, False, False, 0, 0]):
+def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=100, train_val_test_unlabel_split=[0.8, 0.2, 0, 0], augmented_args=[0, False, False, 0, 0]):
     # Set up datasets and dataloaders
     dataset = {}
-    pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel = get_pediatric(data_dir, kwargs, frames, data_type, train_val_test_unlabel_split, augmented_args)
+    pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel = get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split, augmented_args)
 
-    dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel = get_dynamic(data_dir, kwargs, frames, percentage_dynamic_labelled, augmented_args)
+    dynamic_train, dynamic_val, dynamic_test, dynamic_unlabel = get_dynamic(data_dir, kwargs, percentage_dynamic_labelled, augmented_args)
 
     dataset["train"] = concat_dataset(pediatric_train, dynamic_train)
 
@@ -257,44 +257,43 @@ def concat_dataset(pediatric, dynamic):
     else:
         return pd.DataFrame()
     
-def get_pediatric(data_dir, kwargs, frames, data_type, train_val_test_unlabel_split, augmented_args=[0, False, False, 0, 0]):
+def get_pediatric(data_dir, kwargs, data_type, train_val_test_unlabel_split, augmented_args=[0, False, False, 0, 0]):
     num_augmented_videos = augmented_args[0]
     dropout_only = augmented_args[1]
     rotation_only = augmented_args[2]
     dropout_int = augmented_args[3]
     rotation_int = augmented_args[4]
-    print("frames: ", frames)
     if train_val_test_unlabel_split[0] <= 0 or train_val_test_unlabel_split[0] > 1:
         pediatric_train = None
     else:
-        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, length=frames,
+        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, 
             tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmented_videos, 
             dropout_only=dropout_only, rotation_only=rotation_only, dropout_int=dropout_int, 
             rotation_int=rotation_int, **kwargs)
     if train_val_test_unlabel_split[1] <= 0 or train_val_test_unlabel_split[1] > 1:
         pediatric_val = None
     else:
-        pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", length=frames, data_type=data_type, 
+        pediatric_val = efpredict.datasets.EchoPediatric(root=data_dir, split="val", data_type=data_type, 
             tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmented_videos, 
             dropout_only=dropout_only, rotation_only=rotation_only, dropout_int=dropout_int, 
             rotation_int=rotation_int, **kwargs)
     if train_val_test_unlabel_split[2] <= 0 or train_val_test_unlabel_split[2] > 1:
         pediatric_test = None
     else:
-        pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", length=frames, data_type=data_type, 
+        pediatric_test = efpredict.datasets.EchoPediatric(root=data_dir, split="test", data_type=data_type, 
             tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmented_videos, 
             dropout_only=dropout_only, rotation_only=rotation_only, dropout_int=dropout_int, 
             rotation_int=rotation_int, **kwargs)    
     if train_val_test_unlabel_split[3] <= 0 or train_val_test_unlabel_split[3] > 1:
         pediatric_unlabel = None
     else:
-        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", length=frames, data_type=data_type, 
+        pediatric_unlabel = efpredict.datasets.EchoPediatric(root=data_dir, split="unlabel", data_type=data_type, 
             tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmented_videos, 
             dropout_only=dropout_only, rotation_only=rotation_only, dropout_int=dropout_int, 
             rotation_int=rotation_int, **kwargs)    
     return pediatric_train, pediatric_val, pediatric_test, pediatric_unlabel
 
-def get_dynamic(data_dir, kwargs, frames, percentage_dynamic_labelled, augmented_args=[0, False, False, 0, 0]):
+def get_dynamic(data_dir, kwargs, percentage_dynamic_labelled, augmented_args=[0, False, False, 0, 0]):
     num_augmented_videos = augmented_args[0]
     dropout_only = augmented_args[1]
     rotation_only = augmented_args[2]
@@ -306,17 +305,17 @@ def get_dynamic(data_dir, kwargs, frames, percentage_dynamic_labelled, augmented
         dynamic_test = None
         dynamic_unlabel = None
     else:    
-        dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", length=frames, percentage_dynamic_labelled=percentage_dynamic_labelled,
+        dynamic_train = efpredict.datasets.EchoDynamic(root=data_dir, split="train", percentage_dynamic_labelled=percentage_dynamic_labelled,
             num_augmented_videos=num_augmented_videos, dropout_only=dropout_only, rotation_only=rotation_only, 
             dropout_int=dropout_int, rotation_int=rotation_int, **kwargs)    
-        dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", length=frames, percentage_dynamic_labelled=percentage_dynamic_labelled, 
+        dynamic_val = efpredict.datasets.EchoDynamic(root=data_dir, split="val", percentage_dynamic_labelled=percentage_dynamic_labelled, 
             num_augmented_videos=num_augmented_videos, dropout_only=dropout_only, rotation_only=rotation_only, 
             dropout_int=dropout_int, rotation_int=rotation_int, **kwargs)    
-        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", length=frames, percentage_dynamic_labelled=100, 
+        dynamic_test = efpredict.datasets.EchoDynamic(root=data_dir, split="test", percentage_dynamic_labelled=100, 
             num_augmented_videos=num_augmented_videos, dropout_only=dropout_only, rotation_only=rotation_only, 
             dropout_int=dropout_int, rotation_int=rotation_int, **kwargs)   
         if percentage_dynamic_labelled != 100:
-            dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", length=frames, percentage_dynamic_labelled=percentage_dynamic_labelled, 
+            dynamic_unlabel = efpredict.datasets.EchoDynamic(root=data_dir, split="unlabel", percentage_dynamic_labelled=percentage_dynamic_labelled, 
             num_augmented_videos=num_augmented_videos, dropout_only=dropout_only, rotation_only=rotation_only, 
             dropout_int=dropout_int, rotation_int=rotation_int, **kwargs)   
         else:
