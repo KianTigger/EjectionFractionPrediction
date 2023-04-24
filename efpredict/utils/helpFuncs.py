@@ -263,6 +263,7 @@ def get_pediatric(data_dir, kwargs, frames, data_type, train_val_test_unlabel_sp
     rotation_only = augmented_args[2]
     dropout_int = augmented_args[3]
     rotation_int = augmented_args[4]
+    print("frames: ", frames)
     if train_val_test_unlabel_split[0] <= 0 or train_val_test_unlabel_split[0] > 1:
         pediatric_train = None
     else:
