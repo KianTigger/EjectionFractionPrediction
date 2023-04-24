@@ -17,7 +17,7 @@ def augment_video(video, num_augmented_videos=0, dropout_only=False, rotation_on
     if isinstance(dropout_int, int) and 0 <= dropout_int <= 3:
         dropout_percentages = dropout_percentages[dropout_int]
     else:
-        dropout_percentages = dropout_percentages[1]
+        dropout_percentages = dropout_percentages[3]
 
     rotation_angles = [[1, 2, 3, -1, -2, -3], [2, 5, 8, -2, -5, -8], [5, 10, 15, -5, -10, -15]]
     if isinstance(rotation_int, int) and 0 <= rotation_int <= 2:
