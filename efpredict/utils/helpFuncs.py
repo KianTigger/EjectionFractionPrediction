@@ -267,7 +267,7 @@ def get_pediatric(data_dir, kwargs, frames, data_type, train_val_test_unlabel_sp
     if train_val_test_unlabel_split[0] <= 0 or train_val_test_unlabel_split[0] > 1:
         pediatric_train = None
     else:
-        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", length=frames, data_type=data_type, 
+        pediatric_train = efpredict.datasets.EchoPediatric(root=data_dir, split="train", data_type=data_type, length=frames,
             tvtu_split=train_val_test_unlabel_split, num_augmented_videos=num_augmented_videos, 
             dropout_only=dropout_only, rotation_only=rotation_only, dropout_int=dropout_int, 
             rotation_int=rotation_int, **kwargs)
