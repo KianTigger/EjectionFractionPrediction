@@ -100,6 +100,7 @@ def run(
 ):
     # TODO Write docstrings, and explanations for args
     kwargs = helpFuncs.mean_and_std(data_dir, task, frames, period)
+    print("kwargs: ", kwargs)
 
     # if train_val_test_unlabel_split is a string, convert to list
     if isinstance(train_val_test_unlabel_split, str):
