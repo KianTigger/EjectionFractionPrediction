@@ -108,7 +108,7 @@ def run(
     
     augmented_args = [num_augmented_videos, dropout_only, rotation_only, dropout_int, rotation_int]
 
-    dataset = helpFuncs.get_dataset(data_dir, kwargs, frames, data_type, percentage_dynamic_labelled, 
+    dataset = helpFuncs.get_dataset(data_dir, kwargs, data_type, percentage_dynamic_labelled, 
                                     train_val_test_unlabel_split, augmented_args=augmented_args,
                                     )
     
