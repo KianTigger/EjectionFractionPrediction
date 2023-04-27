@@ -366,11 +366,12 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
         #Print the RMSE
         print("RMSE: {:.2f}".format(math.sqrt(sklearn.metrics.mean_squared_error(y, yhat))))
         #Print the R2
-        print("R2: {:.2f}".format(sklearn.metrics.r2_score(y, yhat)))
+        r2 = sklearn.metrics.r2_score(y, yhat)
+        print("R2: {:.2f}".format(r2))
 
-        plot_results(y, yhat, split, output)
+        plot_results(y, yhat, split, output, r2)
 
-def plot_results(y, yhat, split, output): 
+def plot_results(y, yhat, split, output, r2=False): 
         print("Plotting results") 
         # Plot actual and predicted EF
         fig = plt.figure(figsize=(3, 3))
@@ -386,20 +387,30 @@ def plot_results(y, yhat, split, output):
         plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
         plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
         plt.tight_layout()
+
+         # Add R-squared value to the bottom right of the graph
+        if r2:
+            plt.text(upper - 8, lower - 1, f'R² = {r2:.2f}', fontsize=9, ha='right')
+
         plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
         plt.close(fig)
 
         # Plot AUROC
         fig = plt.figure(figsize=(3, 3))
         plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
-        for thresh in [35, 40, 45, 50]:
+
+        colors = ["b", "g", "r", "c"]  # Define a list of colors for the ROC curves
+        thresholds = [35, 40, 45, 50]
+
+        for i, thresh in enumerate(thresholds):
             fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
             # print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
-            plt.plot(fpr, tpr)
+            plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}')
 
         plt.axis([-0.01, 1.01, -0.01, 1.01])
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
+        plt.legend(loc="lower right")
         plt.tight_layout()
         plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
         plt.close(fig)
