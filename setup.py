@@ -29,7 +29,7 @@ setuptools.setup(
         "opencv-python",
         "scikit-image",
         "tqdm",
-        "sklearn",
+        "scikit-learn",
         "pillow"
     ],
     classifiers=[
