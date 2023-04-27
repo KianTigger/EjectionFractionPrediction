@@ -368,9 +368,10 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
         #Print the R2
         print("R2: {:.2f}".format(sklearn.metrics.r2_score(y, yhat)))
 
-        # plot_results(y, yhat, split, output)
+        plot_results(y, yhat, split, output)
 
-def plot_results(y, yhat, split, output):  
+def plot_results(y, yhat, split, output): 
+        print("Plotting results") 
         # Plot actual and predicted EF
         fig = plt.figure(figsize=(3, 3))
         lower = min(y.min(), yhat.min())
