@@ -394,7 +394,7 @@ def plot_results(y, yhat, split, output):
         plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
         for thresh in [35, 40, 45, 50]:
             fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
-            print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
+            # print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
             plt.plot(fpr, tpr)
 
         plt.axis([-0.01, 1.01, -0.01, 1.01])
