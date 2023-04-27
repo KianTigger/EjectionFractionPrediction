@@ -124,7 +124,10 @@ def setup_model(seed, model_name, pretrained, device, weights, frames,
 
     if scheduler_params is not None:
         scheduler_type = scheduler_params.pop("scheduler_type")
-        lr_step_period = scheduler_params.pop("step_size")
+        try:
+            lr_step_period = scheduler_params.pop("step_size")
+        except KeyError:
+            pass
     else:
         scheduler_type = None
     
