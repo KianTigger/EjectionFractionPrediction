@@ -372,48 +372,96 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
         plot_results(y, yhat, split, output, r2)
 
 def plot_results(y, yhat, split, output, r2=False): 
-        print("Plotting results") 
-        # Plot actual and predicted EF
-        fig = plt.figure(figsize=(3, 3))
-        lower = min(y.min(), yhat.min())
-        upper = max(y.max(), yhat.max())
-        plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
-        plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
-        plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
-        plt.gca().set_aspect("equal", "box")
-        plt.xlabel("Actual EF (%)")
-        plt.ylabel("Predicted EF (%)")
-        plt.xticks([10, 20, 30, 40, 50, 60, 70, 80])
-        plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
-        plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
-        plt.tight_layout()
+    print("Plotting results") 
 
-         # Add R-squared value to the bottom right of the graph
-        if r2:
-            plt.text(upper - 8, lower - 1, f'R² = {r2:.2f}', fontsize=9, ha='right')
+    # Plot actual and predicted EF
+    fig = plt.figure(figsize=(3, 3))
+    lower = min(y.min(), yhat.min())
+    upper = max(y.max(), yhat.max())
+    plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
+    plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
+    plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
+    plt.gca().set_aspect("equal", "box")
+    plt.xlabel("Actual EF (%)")
+    plt.ylabel("Predicted EF (%)")
+    plt.xticks([10, 20, 30, 40, 50, 60, 70, 80])
+    plt.yticks([10, 20, 30, 40, 50, 60, 70, 80])
+    plt.grid(color="gainsboro", linestyle="--", linewidth=1, zorder=1)
+    plt.tight_layout()
 
-        plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
-        plt.close(fig)
+    # Add R-squared value to the bottom right of the graph
+    if r2:
+        plt.text(upper - 8, lower - 1, f'R² = {r2:.2f}', fontsize=9, ha='right')
 
-        # Plot AUROC
-        fig = plt.figure(figsize=(3, 3))
-        plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
+    plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
+    plt.close(fig)
 
-        colors = ["b", "g", "r", "c"]  # Define a list of colors for the ROC curves
-        thresholds = [35, 40, 45, 50]
+    # Plot AUROC
+    fig = plt.figure(figsize=(3, 3))
+    plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
 
-        for i, thresh in enumerate(thresholds):
-            fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
-            # print(thresh, sklearn.metrics.roc_auc_score(y > thresh, yhat))
-            plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}')
+    colors = ["b", "g", "r", "c"]  # Define a list of colors for the ROC curves
+    thresholds = [35, 40, 45, 50]
 
-        plt.axis([-0.01, 1.01, -0.01, 1.01])
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.legend(loc="lower right")
-        plt.tight_layout()
-        plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
-        plt.close(fig)
+    for i, thresh in enumerate(thresholds):
+        fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
+        plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}')
+
+    plt.axis([-0.01, 1.01, -0.01, 1.01])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.legend(loc="lower right")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
+    plt.close(fig)
+
+    # Plot binary AUC for over/under 40
+    fig = plt.figure(figsize=(3, 3))
+    plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
+
+    binary_y = (y >= 40).astype(int)
+    binary_yhat = (yhat >= 40).astype(int)
+    fpr, tpr, _ = sklearn.metrics.roc_curve(binary_y, binary_yhat)
+    auc = sklearn.metrics.roc_auc_score(binary_y, binary_yhat)
+
+    plt.plot(fpr, tpr, label=f'AUC = {auc:.2f}')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.legend(loc="lower right")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output, "{}_binary_roc.pdf".format(split)))
+    plt.close(fig)
+
+    # Create and save accuracy ranges plot
+    fig = plot_accuracy_ranges(y, yhat)
+    plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"))
+    plt.close(fig)
+
+def plot_accuracy_ranges(y, yhat, split, output):
+    ranges = [(0, 40), (40, 50), (50, np.inf)]
+    range_labels = ['0-40', '40-50', '50+']
+    accuracies = []
+
+    for r in ranges:
+        mask = (y >= r[0]) & (y < r[1])
+        y_range = y[mask]
+        yhat_range = yhat[mask]
+        accuracy = np.mean((y_range >= 40) == (yhat_range >= 40))
+        accuracies.append(accuracy)
+
+    fig = plt.figure(figsize=(6, 4))
+    bar_width = 0.4
+    index = np.arange(len(ranges))
+    plt.bar(index, accuracies, bar_width, color='b', alpha=0.7)
+    plt.xlabel("Actual EF Ranges (%)")
+    plt.ylabel("Accuracy")
+    plt.xticks(index, range_labels)
+    plt.ylim([0, 1])
+    plt.title("Model Accuracy for Different EF Ranges")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"))
+    plt.close(fig)
+
 
 def custom_collate(batch):
     #TODO make sure this is preprocessing the data correctly.
