@@ -440,7 +440,7 @@ def plot_results(y, yhat, split, output, r2=False):
     plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"))
     plt.close(fig)
 
-def plot_accuracy_ranges(y, yhat, split, output):
+def plot_accuracy_ranges(y, yhat):
     ranges = [(0, 40), (40, 50), (50, np.inf)]
     range_labels = ['0-40', '40-50', '50+']
     accuracies = []
@@ -462,8 +462,7 @@ def plot_accuracy_ranges(y, yhat, split, output):
     plt.ylim([0, 1])
     plt.title("Model Accuracy for Different EF Ranges")
     plt.tight_layout()
-    plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"))
-    plt.close(fig)
+    return fig
 
 
 def custom_collate(batch):
