@@ -401,7 +401,7 @@ def plot_results(y, yhat, split, output, r2=False):
         # plt.text(upper - 8, lower - 1, f'R² = {r2:.2f}', fontsize=9, ha='right')
         # instead of plt.text, use plt.textbbox
         props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        plt.text(upper - 6, lower + 1, f'R² = {r2:.2f}', fontsize=9, ha='right', bbox=props)
+        plt.text(upper - 2, lower + 1, f'R² = {r2:.2f}', fontsize=9, ha='right', bbox=props)
 
 
     plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
