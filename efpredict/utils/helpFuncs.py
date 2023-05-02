@@ -407,8 +407,9 @@ def plot_results(y, yhat, split, output, r2=False):
     thresholds = [35, 40, 45, 50]
 
     for i, thresh in enumerate(thresholds):
+        current_auc = sklearn.metrics.roc_auc_score(y > thresh, yhat)
         fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
-        plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}')
+        plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}, AUC = {current_auc:.2f}')
 
     plt.axis([-0.01, 1.01, -0.01, 1.01])
     plt.xlabel("False Positive Rate")
