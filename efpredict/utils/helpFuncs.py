@@ -401,10 +401,10 @@ def plot_results(y, yhat, split, output, r2=False):
         # plt.text(upper - 8, lower - 1, f'R² = {r2:.2f}', fontsize=9, ha='right')
         # instead of plt.text, use plt.textbbox
         props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        plt.text(upper - 2, lower + 1, f'R² = {r2:.2f}', fontsize=9, ha='right', bbox=props)
+        plt.text(upper - 1, lower + 1, f'R² = {r2:.2f}', fontsize=9, ha='right', bbox=props)
 
 
-    plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)))
+    plt.savefig(os.path.join(output, "{}_scatter.pdf".format(split)), dpi=300)
     plt.close(fig)
 
     # Plot AUROC
@@ -427,7 +427,7 @@ def plot_results(y, yhat, split, output, r2=False):
     plt.ylabel("True Positive Rate")
     plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)))
+    plt.savefig(os.path.join(output, "{}_roc.pdf".format(split)), dpi=300)
     plt.close(fig)
 
     # Plot binary AUC for over/under 40
@@ -444,12 +444,12 @@ def plot_results(y, yhat, split, output, r2=False):
     plt.ylabel("True Positive Rate")
     plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig(os.path.join(output, "{}_binary_roc.pdf".format(split)))
+    plt.savefig(os.path.join(output, "{}_binary_roc.pdf".format(split)), dpi=300)
     plt.close(fig)
 
     # Create and save accuracy ranges plot
     fig = plot_accuracy_ranges(y, yhat)
-    plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"))
+    plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"), dpi=300)
     plt.close(fig)
 
 def plot_accuracy_ranges(y, yhat):
