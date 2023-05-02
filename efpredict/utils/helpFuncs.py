@@ -381,6 +381,10 @@ def plot_results(y, yhat, split, output, r2=False):
     fig = plt.figure(figsize=(3, 3))
     lower = min(y.min(), yhat.min())
     upper = max(y.max(), yhat.max())
+    title = "EF Predictions"
+    if split == "val":
+        title += " (validation)"
+    plt.title(title)
     plt.scatter(y, yhat, color="k", s=1, edgecolor=None, zorder=2)
     plt.plot([0, 100], [0, 100], linewidth=1, zorder=3)
     plt.axis([lower - 3, upper + 3, lower - 3, upper + 3])
@@ -403,13 +407,16 @@ def plot_results(y, yhat, split, output, r2=False):
     fig = plt.figure(figsize=(3, 3))
     plt.plot([0, 1], [0, 1], linewidth=1, color="k", linestyle="--")
 
+    title = "Thresholded AUROC for EF Predictions"
+    plt.title(title)
+
     colors = ["b", "g", "r", "c"]  # Define a list of colors for the ROC curves
     thresholds = [35, 40, 45, 50]
 
     for i, thresh in enumerate(thresholds):
         current_auc = sklearn.metrics.roc_auc_score(y > thresh, yhat)
         fpr, tpr, _ = sklearn.metrics.roc_curve(y > thresh, yhat)
-        plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}, AUC = {current_auc:.2f}')
+        plt.plot(fpr, tpr, color=colors[i], label=f'Threshold {thresh}, AUC = {current_auc:.3f}')
 
     plt.axis([-0.01, 1.01, -0.01, 1.01])
     plt.xlabel("False Positive Rate")
@@ -460,7 +467,7 @@ def plot_accuracy_ranges(y, yhat):
     plt.xlabel("Actual EF Ranges (%)")
     plt.ylabel("Accuracy")
     plt.xticks(index, range_labels)
-    plt.ylim([0, 1])
+    plt.ylim([0.5, 1])
     plt.title("Model Accuracy for Different EF Ranges")
     plt.tight_layout()
     return fig
