@@ -331,6 +331,15 @@ def get_unlabelled_dataset(data_dir):
     return unlabelled_dataset
 
 def test_results(f, output, model, dataset, batch_size, num_workers, device):
+
+    #print number of parameters
+    try:
+        parameters = count_parameters(model)
+        f.write("Number of parameters: {}\n".format(parameters))
+        print("Number of parameters: {}\n".format(parameters))
+    except:
+        pass
+
     for split in ["val", "test"]:
         # Performance without test-time augmentation
         ds = dataset[split]
@@ -476,6 +485,8 @@ def plot_accuracy_ranges(y, yhat):
     plt.tight_layout()
     return fig
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def custom_collate(batch):
     #TODO make sure this is preprocessing the data correctly.
