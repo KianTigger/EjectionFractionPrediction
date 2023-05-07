@@ -508,7 +508,10 @@ def plot_confusion_matrix(y, yhat):
 
     # Plot confusion matrix using seaborn
     fig, ax = plt.subplots(figsize=(6, 4))
-    sns.heatmap(cm_normalized, annot=True, fmt='.2%', cmap="Blues", ax=ax, cbar_kws={'label': 'Percentage'})
+    cbar_ticks = [0, 1]  # Colorbar ticks at 0% and 100%
+    cbar_tick_labels = ['0%', '100%']  # Colorbar tick labels
+    sns.heatmap(cm_normalized, annot=True, fmt='.2%', cmap="Blues", ax=ax,
+                cbar_kws={'label': 'Percentage', 'ticks': cbar_ticks, 'format': '%.0f%%'})
     ax.set(xticks=np.arange(len(range_labels)) + 0.5, yticks=np.arange(len(range_labels)) + 0.5,
            xticklabels=range_labels, yticklabels=range_labels,
            xlabel="Predicted EF Ranges", ylabel="Actual EF Ranges",
