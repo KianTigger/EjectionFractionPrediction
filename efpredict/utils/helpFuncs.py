@@ -506,6 +506,9 @@ def plot_confusion_matrix(y, yhat):
     # Normalize confusion matrix to show percentages
     cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
+    # Multiply by 100 to change the range from 0-1 to 0-100
+    cm_normalized = cm_normalized * 100
+
     # Plot confusion matrix using seaborn
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.heatmap(cm_normalized, annot=True, fmt='.2%', cmap="Blues", ax=ax, cbar_kws={'label': 'Percentage'})
