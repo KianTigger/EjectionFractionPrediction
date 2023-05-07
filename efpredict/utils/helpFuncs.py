@@ -379,7 +379,7 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
         print("RMSE: {:.2f}".format(math.sqrt(sklearn.metrics.mean_squared_error(y, yhat))))
         #Print the R2
         r2 = sklearn.metrics.r2_score(y, yhat)
-        print("R2: {:.2f}".format(r2))
+        print("R2: {:.3f}".format(r2))
 
         plot_results(y, yhat, split, output, r2)
 
