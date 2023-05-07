@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 import sklearn.metrics
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 import efpredict
 
@@ -461,6 +463,11 @@ def plot_results(y, yhat, split, output, r2=False):
     plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"), dpi=300)
     plt.close(fig)
 
+    # Create and save confusion matrix
+    fig = plot_confusion_matrix(y, yhat)
+    plt.savefig(os.path.join(output, f"{split}_confusion_matrix.pdf"), dpi=300)
+    plt.close(fig)
+
 def plot_accuracy_ranges(y, yhat):
     ranges = [(0, 40), (40, 50), (50, np.inf)]
     range_labels = ['0-40', '40-50', '50+']
@@ -483,6 +490,27 @@ def plot_accuracy_ranges(y, yhat):
     plt.ylim([0.5, 1])
     plt.title("Model Accuracy for Different EF Ranges")
     plt.tight_layout()
+    return fig
+
+def plot_confusion_matrix(y, yhat):
+    ranges = [(0, 40), (40, 50), (50, np.inf)]
+    range_labels = ['HFrEF', 'HFmrEF', 'HFpEF']
+
+    # Categorize y and yhat based on the specified ranges
+    y_categorized = np.digitize(y, [r[1] for r in ranges[:-1]]) - 1
+    yhat_categorized = np.digitize(yhat, [r[1] for r in ranges[:-1]]) - 1
+
+    # Calculate confusion matrix
+    cm = confusion_matrix(y_categorized, yhat_categorized)
+
+    # Plot confusion matrix using seaborn
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.heatmap(cm, annot=True, fmt='d', cmap="Blues", ax=ax, cbar_kws={'label': 'Count'})
+    ax.set(xticks=np.arange(len(range_labels)), yticks=np.arange(len(range_labels)),
+           xticklabels=range_labels, yticklabels=range_labels,
+           xlabel="Predicted EF Ranges", ylabel="Actual EF Ranges",
+           title="Confusion Matrix for Different EF Ranges")
+    fig.tight_layout()
     return fig
 
 def count_parameters(model):
