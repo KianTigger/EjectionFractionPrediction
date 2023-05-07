@@ -509,7 +509,7 @@ def plot_confusion_matrix(y, yhat):
     # Plot confusion matrix using seaborn
     fig, ax = plt.subplots(figsize=(6, 4))
     cbar_ticks = np.linspace(0, 1, 6)  # Colorbar ticks for 0%, 20%, 40%, 60%, 80%, and 100%
-    cbar_tick_labels = ['{}%'.format(int(x * 100)) for x in cbar_ticks]  # Colorbar tick labels
+    cbar_tick_labels = ["0%", "20%", "40%", "60%", "80%", "100%"]  # Colorbar tick labels
     sns.heatmap(cm_normalized, annot=True, fmt='.2%', cmap="Blues", ax=ax,
                 cbar_kws={'label': 'Percentage', 'ticks': cbar_tick_labels, 'format': '%.0f%%'})
     # ax.figure.colorbar(ax.collections[0], ticks=cbar_tick_labels, format='%.0f%%') # Force colorbar to display all ticks
