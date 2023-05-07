@@ -512,7 +512,7 @@ def plot_confusion_matrix(y, yhat):
 
     # set cbar to be on the right side of the plot, 0 - 100%
     cbar = ax.collections[0].colorbar
-    cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 1])
+    cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8])
     cbar.set_ticklabels(['0%', '20%', '40%', '60%', '80%'])
 
     ax.set(xticks=np.arange(len(range_labels)) + 0.5, yticks=np.arange(len(range_labels)) + 0.5,
