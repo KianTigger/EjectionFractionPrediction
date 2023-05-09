@@ -245,7 +245,7 @@ def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=1
     
     dataset["unlabelled"] = concat_dataset(pediatric_unlabel, dynamic_unlabel)
 
-    dataset["CAMUS"] = efpredict.datasets.CAMUS(root=data_dir, split="test", data_type=data_type, **kwargs) 
+    dataset["CAMUS"] = efpredict.datasets.CAMUS(root=data_dir, split="test", **kwargs) 
     
     print("Total train: ", len(dataset["train"]))
     print("Total val: ", len(dataset["val"]))
