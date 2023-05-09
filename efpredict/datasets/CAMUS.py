@@ -108,9 +108,8 @@ class CAMUS(torchvision.datasets.VisionDataset):
         
         # Get video path
         video_path = os.path.join(self.root, fnamewithoutsuffix, 'video_' + self.fnames[index])
-        # Get video
-        print("video_path: ", video_path)
 
+        # Get video
         video = efpredict.utils.loadvideo(video_path).astype(np.float32)
 
         # Pad video
@@ -139,7 +138,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
         if self.pad is not None:
             video = self.pad_video(video)
 
-        return video, target
+        return [video], target
     
     def gather_targets(self, index):
         # Gather targets
