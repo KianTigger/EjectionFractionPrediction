@@ -141,6 +141,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
                     target.append(np.float32(0))
                 else:
                     print("self.outcome[index]: ", self.outcome[index])
+                    print("index", index)
                     target.append(np.float32(
                         self.outcome[index]["EF"]))
 
