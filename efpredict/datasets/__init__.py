@@ -10,5 +10,6 @@ echocardiogram videos.
 from .echoDynamic import EchoDynamic
 from .echoUnlabelled import EchoUnlabelled
 from .echoPediatric import EchoPediatric
+from .CAMUS import CAMUS
 
-__all__ = ["EchoDynamic", "EchoUnlabelled", "EchoPediatric"]
+__all__ = ["EchoDynamic", "EchoUnlabelled", "EchoPediatric", "CAMUS"]
