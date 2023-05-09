@@ -242,6 +242,8 @@ def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=1
     dataset["test"] = concat_dataset(pediatric_test, dynamic_test)
     
     dataset["unlabelled"] = concat_dataset(pediatric_unlabel, dynamic_unlabel)
+
+    dataset["CAMUS"] = efpredict.datasets.CAMUS(root=data_dir, split="test", data_type=data_type, **kwargs) 
     
     print("Total train: ", len(dataset["train"]))
     print("Total val: ", len(dataset["val"]))
@@ -331,9 +333,12 @@ def get_unlabelled_dataset(data_dir):
     return unlabelled_dataset
 
 def test_results(f, output, model, dataset, batch_size, num_workers, device):
-    for split in ["val", "test"]:
+    for split in ["val", "test", "CAMUS"]:
         # Performance without test-time augmentation
-        ds = dataset[split]
+        try:
+            ds = dataset[split]
+        except KeyError:
+            continue
         dataloader = torch.utils.data.DataLoader(
             ds,
             batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=(device.type == "cuda"))

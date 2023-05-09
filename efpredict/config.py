@@ -27,5 +27,6 @@ CONFIG = types.SimpleNamespace(
     FILENAME=_FILENAME,
     DATA_DIR=_PARAM.get("DATA_DIR", "../Datasets/EchoNet-Dynamic/"),
     UNLABELLED_DIR=_PARAM.get("UNLABELLED_DIR", "../Datasets/EchoNet-LVH/"),
-    PEDIATRIC_DIR=_PARAM.get("PEDIATRIC_DIR", "../Datasets/EchoNet-Pediatric/"))
+    PEDIATRIC_DIR=_PARAM.get("PEDIATRIC_DIR", "../Datasets/EchoNet-Pediatric/"),
+    CAMUS_DIR=_PARAM.get("CAMUS_DIR", "../Datasets/CAMUS/"))
 
