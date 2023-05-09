@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 import sklearn.metrics
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 import efpredict
 
@@ -333,6 +335,15 @@ def get_unlabelled_dataset(data_dir):
     return unlabelled_dataset
 
 def test_results(f, output, model, dataset, batch_size, num_workers, device):
+
+    #print number of parameters
+    try:
+        parameters = count_parameters(model)
+        f.write("Number of parameters: {}\n".format(parameters))
+        print("Number of parameters: {}\n".format(parameters))
+    except:
+        pass
+
     for split in ["val", "test", "CAMUS"]:
         # Performance without test-time augmentation
         try:
@@ -375,7 +386,7 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
         print("RMSE: {:.2f}".format(math.sqrt(sklearn.metrics.mean_squared_error(y, yhat))))
         #Print the R2
         r2 = sklearn.metrics.r2_score(y, yhat)
-        print("R2: {:.2f}".format(r2))
+        print("R2: {:.3f}".format(r2))
 
         plot_results(y, yhat, split, output, r2)
 
@@ -457,6 +468,11 @@ def plot_results(y, yhat, split, output, r2=False):
     plt.savefig(os.path.join(output, f"{split}_accuracy_ranges.pdf"), dpi=300)
     plt.close(fig)
 
+    # Create and save confusion matrix
+    fig = plot_confusion_matrix(y, yhat)
+    plt.savefig(os.path.join(output, f"{split}_confusion_matrix.pdf"), dpi=300)
+    plt.close(fig)
+
 def plot_accuracy_ranges(y, yhat):
     ranges = [(0, 40), (40, 50), (50, np.inf)]
     range_labels = ['0-40', '40-50', '50+']
@@ -481,6 +497,40 @@ def plot_accuracy_ranges(y, yhat):
     plt.tight_layout()
     return fig
 
+def plot_confusion_matrix(y, yhat):
+    ranges = [(0, 40), (40, 50), (50, np.inf)]
+    range_labels = ['HFrEF', 'HFmrEF', 'HFpEF']
+
+    # Categorize y and yhat based on the specified ranges
+    y_categorized = np.digitize(y, [r[1] for r in ranges[:-1]]) - 1
+    yhat_categorized = np.digitize(yhat, [r[1] for r in ranges[:-1]]) - 1
+
+    # Calculate confusion matrix
+    cm = confusion_matrix(y_categorized, yhat_categorized)
+
+    # Normalize confusion matrix to show percentages
+    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    # Plot confusion matrix using seaborn
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.heatmap(cm_normalized, annot=True, fmt='.2%', cmap="Blues", ax=ax)
+
+    # set cbar to be on the right side of the plot, 0 - 100%
+    cbar = ax.collections[0].colorbar
+    cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8])
+    cbar.set_ticklabels(['0%', '20%', '40%', '60%', '80%'])
+
+    ax.set(xticks=np.arange(len(range_labels)) + 0.5, yticks=np.arange(len(range_labels)) + 0.5,
+           xticklabels=range_labels, yticklabels=range_labels,
+           xlabel="Predicted EF Ranges", ylabel="Actual EF Ranges",
+           title="Confusion Matrix for Different EF Ranges")
+    ax.set_xticklabels(ax.get_xticklabels(), ha='center')
+    ax.set_yticklabels(ax.get_yticklabels(), va='center')
+    fig.tight_layout()
+    return fig
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def custom_collate(batch):
     #TODO make sure this is preprocessing the data correctly.
