@@ -123,7 +123,18 @@ class CAMUS(torchvision.datasets.VisionDataset):
         video = self.set_frames(video, length)
 
         # Get target
-        target = self.gather_targets(index)
+        # target = self.gather_targets(index)
+        # load the target from the video path Info_4CH.cfg file
+        tempFile = open(os.path.join(self.root, fnamewithoutsuffix, "Info_4CH.cfg"), "r")
+        lines = tempFile.readlines()
+        tempFile.close()
+        values = {}
+        for line in lines:
+            if line[0] == "#":
+                continue
+            line = line.split(":")
+            values[line[0]] = line[1].strip()
+        target = float(values["EF"])
 
         if self.pad is not None:
             video = self.pad_video(video)
