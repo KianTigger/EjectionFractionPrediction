@@ -102,8 +102,12 @@ class CAMUS(torchvision.datasets.VisionDataset):
             ]
     
     def __getitem__(self, index):
+
+        fname = self.fnames[index]
+        fnamewithoutsuffix = os.path.splitext(fname)[0]
+        
         # Get video path
-        video_path = os.path.join(self.root, self.fnames[index])
+        video_path = os.path.join(self.root, fnamewithoutsuffix, self.fnames[index])
         # Get video
 
         video = efpredict.utils.loadvideo(video_path).astype(np.float32)
