@@ -140,6 +140,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
                 if self.split == "CLINICAL_TEST" or self.split == "EXTERNAL_TEST":
                     target.append(np.float32(0))
                 else:
+                    print("self.outcome[index]: ", self.outcome[index])
                     target.append(np.float32(
                         self.outcome[index]["EF"]))
 
