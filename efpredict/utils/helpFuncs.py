@@ -344,7 +344,7 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
     except:
         pass
 
-    for split in ["val", "test", "CAMUS"]:
+    for split in ["CAMUS", "val", "test"]:
         # Performance without test-time augmentation
         try:
             ds = dataset[split]
