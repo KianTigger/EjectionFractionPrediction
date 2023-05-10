@@ -11,7 +11,7 @@ import efpredict.datasets.datasetHelpFuncs as helpFuncs
 
 class CAMUS(torchvision.datasets.VisionDataset):
     def __init__(self, root=None,                 
-                 split="test", target_type="EF",
+                 split="all", target_type="EF",
                  mean=0., std=1.,
                  length=16, period=2,
                  max_length=250,
@@ -60,7 +60,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
         if self.split == "EXTERNAL_TEST":
             self.fnames = sorted(os.listdir(self.external_test_location))
         else:
-            self.get_EF_Labels()
+            self.get_EF_Labels(self.split)
     
     def get_EF_Labels(self, filename="Info_4CH.cfg"):
         # for each filename file in self.root, get the following values
@@ -86,8 +86,11 @@ class CAMUS(torchvision.datasets.VisionDataset):
                     continue
                 line = line.split(":")
                 values[line[0]] = line[1].strip()
-            # add the values to the dictionary
-            self.phase_values[folder] = values
+
+            quality = values["ImageQuality"]
+            if quality.upper() == self.split:
+                # add the values to the dictionary
+                self.phase_values[folder] = values
         
         #create self.fnames and self.outcome
         for folder in self.phase_values:

@@ -245,7 +245,11 @@ def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=1
     
     dataset["unlabelled"] = concat_dataset(pediatric_unlabel, dynamic_unlabel)
 
-    dataset["CAMUS"] = efpredict.datasets.CAMUS(root=data_dir, split="test", **kwargs) 
+    dataset["CAMUS_GOOD"] = efpredict.datasets.CAMUS(root=data_dir, split="good", **kwargs) 
+    dataset["CAMUS_MEDIUM"] = efpredict.datasets.CAMUS(root=data_dir, split="medium", **kwargs) 
+    dataset["CAMUS_POOR"] = efpredict.datasets.CAMUS(root=data_dir, split="poor", **kwargs) 
+    dataset["CAMUS"] = efpredict.datasets.CAMUS(root=data_dir, split="all", **kwargs)
+
     
     print("Total train: ", len(dataset["train"]))
     print("Total val: ", len(dataset["val"]))
@@ -344,7 +348,7 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
     except:
         pass
 
-    for split in ["CAMUS", "val", "test"]:
+    for split in ["CAMUS_GOOD", "CAMUS_MEDIUM", "CAMUS_POOR", "CAMUS", "val", "test"]:
         # Performance without test-time augmentation
         try:
             ds = dataset[split]
