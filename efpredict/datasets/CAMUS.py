@@ -60,7 +60,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
         if self.split == "EXTERNAL_TEST":
             self.fnames = sorted(os.listdir(self.external_test_location))
         else:
-            self.get_EF_Labels(self.split)
+            self.get_EF_Labels()
     
     def get_EF_Labels(self, filename="Info_4CH.cfg"):
         # for each filename file in self.root, get the following values
@@ -87,13 +87,11 @@ class CAMUS(torchvision.datasets.VisionDataset):
                 line = line.split(":")
                 values[line[0]] = line[1].strip()
             
-            # print("values: ", values)
 
-            # quality = values["ImageQuality"]
-            # print("quality: ", quality)
-            # if quality.upper() == self.split:
-            #     # add the values to the dictionary
-            self.phase_values[folder] = values
+            quality = values["ImageQuality"]
+            if quality.upper() == self.split:
+                # add the values to the dictionary
+                self.phase_values[folder] = values
         
         #create self.fnames and self.outcome
         for folder in self.phase_values:
