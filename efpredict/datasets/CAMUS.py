@@ -152,6 +152,12 @@ class CAMUS(torchvision.datasets.VisionDataset):
             # Shorten videos to max_length
             length = min(length, self.max_length)
 
+        # if f < length * self.period:
+        #     # Pad video with frames filled with zeros if too short
+        #     # 0 represents the mean color (dark grey), since this is after normalization
+        #     video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
+        #     c, f, h, w = video.shape  # pylint: disable=E0633
+
         if f < length * self.period:
             # Create a mirror of the video in reverse along the frame axis
             video_mirror = np.flip(video, axis=1)
