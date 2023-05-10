@@ -86,6 +86,8 @@ class CAMUS(torchvision.datasets.VisionDataset):
                     continue
                 line = line.split(":")
                 values[line[0]] = line[1].strip()
+            
+            print("values: ", values)
 
             quality = values["ImageQuality"]
             print("quality: ", quality)
