@@ -113,19 +113,77 @@ class CAMUS(torchvision.datasets.VisionDataset):
         # Get video path
         video_path = os.path.join(self.root, fnamewithoutsuffix, 'video_' + self.fnames[index])
 
-        # Get video
+        # Load video into np.array
         video = efpredict.utils.loadvideo(video_path).astype(np.float32)
 
-        # Pad video
-        video = self.normalise_video(video)
+        # Add simulated noise (black out random pixels)
+        # 0 represents black at this point (video has not been normalized yet)
+        if self.noise is not None:
+            n = video.shape[1] * video.shape[2] * video.shape[3]
+            ind = np.random.choice(n, round(self.noise * n), replace=False)
+            f = ind % video.shape[1]
+            ind //= video.shape[1]
+            i = ind % video.shape[2]
+            ind //= video.shape[2]
+            j = ind
+            video[:, f, i, j] = 0
 
-        length = self.set_length(video)
+        # Apply normalization
+        if isinstance(self.mean, (float, int)):
+            video -= self.mean
+        else:
+            video -= self.mean.reshape(3, 1, 1, 1)
+
+        if isinstance(self.std, (float, int)):
+            video /= self.std
+        else:
+            video /= self.std.reshape(3, 1, 1, 1)
 
         # Set number of frames
-        # TODO see if this is needed
-        video = self.set_frames(video, length)
+        c, f, h, w = video.shape
+        if self.length is None:
+            # Take as many frames as possible
+            length = f // self.period
+        else:
+            # Take specified number of frames
+            length = self.length
 
-        # Get target
+        if self.max_length is not None:
+            # Shorten videos to max_length
+            length = min(length, self.max_length)
+
+        if f < length * self.period:
+            # Pad video with frames filled with zeros if too short
+            # 0 represents the mean color (dark grey), since this is after normalization
+            video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
+            c, f, h, w = video.shape  # pylint: disable=E0633
+
+        if self.clips == "all":
+            # Take all possible clips of desired length
+            start = np.arange(f - (length - 1) * self.period)
+        else:
+            # Take random clips from video
+            start = np.random.choice(f - (length - 1) * self.period, self.clips)
+
+                # Get target
+        
+        # Select clips from video
+        video = tuple(video[:, s + self.period * np.arange(length), :, :] for s in start)
+        if self.clips == 1:
+            video = video[0]
+        else:
+            video = np.stack(video)
+
+        if self.pad is not None:
+            # Add padding of zeros (mean color of videos)
+            # Crop of original size is taken out
+            # (Used as augmentation)
+            c, l, h, w = video.shape
+            temp = np.zeros((c, l, h + 2 * self.pad, w + 2 * self.pad), dtype=video.dtype)
+            temp[:, :, self.pad:-self.pad, self.pad:-self.pad] = video  # pylint: disable=E1130
+            i, j = np.random.randint(0, 2 * self.pad, 2)
+            video = temp[:, :, i:(i + h), j:(j + w)]
+        
         # target = self.gather_targets(index)
         # load the target from the video path Info_4CH.cfg file
         tempFile = open(os.path.join(self.root, fnamewithoutsuffix, "Info_4CH.cfg"), "r")
@@ -138,9 +196,6 @@ class CAMUS(torchvision.datasets.VisionDataset):
             line = line.split(":")
             values[line[0]] = line[1].strip()
         target = float(values["EF"])
-
-        if self.pad is not None:
-            video = self.pad_video(video)
 
         return [video], target
     
