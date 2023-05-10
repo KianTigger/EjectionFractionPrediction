@@ -13,7 +13,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
     def __init__(self, root=None,                 
                  split="all", target_type="EF",
                  mean=0., std=1.,
-                 length=32, period=1,
+                 length=64, period=1,
                  max_length=250,
                  percentage_dynamic_labelled=100,
                  num_augmented_videos=0,
@@ -152,25 +152,25 @@ class CAMUS(torchvision.datasets.VisionDataset):
             # Shorten videos to max_length
             length = min(length, self.max_length)
 
-        # if f < length * self.period:
-        #     # Pad video with frames filled with zeros if too short
-        #     # 0 represents the mean color (dark grey), since this is after normalization
-        #     video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
-        #     c, f, h, w = video.shape  # pylint: disable=E0633
-
         if f < length * self.period:
-            # Create a mirror of the video in reverse along the frame axis
-            video_mirror = np.flip(video, axis=1)
-
-            # Concatenate the original video and its mirrored version
-            video = np.concatenate((video, video_mirror), axis=1)
-
-            # If the video is still too short after mirroring, pad with zeros
+            # Pad video with frames filled with zeros if too short
+            # 0 represents the mean color (dark grey), since this is after normalization
+            video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
             c, f, h, w = video.shape  # pylint: disable=E0633
-            if f < length * self.period:
-                video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
+
+        # if f < length * self.period:
+        #     # Create a mirror of the video in reverse along the frame axis
+        #     video_mirror = np.flip(video, axis=1)
+
+        #     # Concatenate the original video and its mirrored version
+        #     video = np.concatenate((video, video_mirror), axis=1)
+
+        #     # If the video is still too short after mirroring, pad with zeros
+        #     c, f, h, w = video.shape  # pylint: disable=E0633
+        #     if f < length * self.period:
+        #         video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
             
-            c, f, h, w = video.shape  # pylint: disable=E0633
+        #     c, f, h, w = video.shape  # pylint: disable=E0633
 
 
 
