@@ -13,7 +13,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
     def __init__(self, root=None,                 
                  split="all", target_type="EF",
                  mean=0., std=1.,
-                 length=48, period=2,
+                 length=24, period=1,
                  max_length=250,
                  percentage_dynamic_labelled=100,
                  num_augmented_videos=0,
