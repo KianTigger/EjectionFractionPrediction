@@ -88,6 +88,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
                 values[line[0]] = line[1].strip()
 
             quality = values["ImageQuality"]
+            print("quality: ", quality)
             if quality.upper() == self.split:
                 # add the values to the dictionary
                 self.phase_values[folder] = values
