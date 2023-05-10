@@ -255,6 +255,11 @@ def get_dataset(data_dir, kwargs, data_type="A4C", percentage_dynamic_labelled=1
     print("Total val: ", len(dataset["val"]))
     print("Total test: ", len(dataset["test"]))
     print("Total unlabelled: ", len(dataset["unlabelled"]))
+
+    print("Total CAMUS_GOOD: ", len(dataset["CAMUS_GOOD"]))
+    print("Total CAMUS_MEDIUM: ", len(dataset["CAMUS_MEDIUM"]))
+    print("Total CAMUS_POOR: ", len(dataset["CAMUS_POOR"]))
+    print("Total CAMUS: ", len(dataset["CAMUS"]))
     
     return dataset
 
@@ -380,6 +385,9 @@ def test_results(f, output, model, dataset, batch_size, num_workers, device):
         # Calculate the mean and standard deviation of the predictions and print them
         mean = np.mean(yhat)
         std = np.std(yhat)
+
+        print("Results from dataset: {}".format(split))
+
         print("Mean: {:.2f}".format(mean))
         print("Std: {:.2f}".format(std))
 
