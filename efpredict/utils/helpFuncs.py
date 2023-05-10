@@ -19,14 +19,12 @@ def get_checkpoint(model, optim, scheduler, output, f):
     epoch_resume = 0
     step_resume = 0
     bestLoss = float("inf")
-    only_best = False
     try:
         # Attempt to load checkpoint
         try:
             checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
         except FileNotFoundError:
             checkpoint = torch.load(os.path.join(output, "best.pt"))
-            only_best = True
         model.load_state_dict(checkpoint['state_dict'])
         optim.load_state_dict(checkpoint['opt_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_dict'])
