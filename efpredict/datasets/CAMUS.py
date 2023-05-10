@@ -87,13 +87,13 @@ class CAMUS(torchvision.datasets.VisionDataset):
                 line = line.split(":")
                 values[line[0]] = line[1].strip()
             
-            print("values: ", values)
+            # print("values: ", values)
 
-            quality = values["ImageQuality"]
-            print("quality: ", quality)
-            if quality.upper() == self.split:
-                # add the values to the dictionary
-                self.phase_values[folder] = values
+            # quality = values["ImageQuality"]
+            # print("quality: ", quality)
+            # if quality.upper() == self.split:
+            #     # add the values to the dictionary
+            self.phase_values[folder] = values
         
         #create self.fnames and self.outcome
         for folder in self.phase_values:
