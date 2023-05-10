@@ -181,10 +181,11 @@ def run_epoch(model, dataloader, train, optim, device, step_resume, checkpoint_a
                     pbar.update(1)
                     continue
 
-                if step != 0 and step % (int(num_items//10)) == 0 and train:
-                    helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
-                            checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
-                            checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
+                if step != 0 and step > 10:
+                    if step % (int(num_items//10)) == 0 and train:
+                        helpFuncs.save_checkpoint(model, checkpoint_args["period"], checkpoint_args["frames"], 
+                                checkpoint_args["epoch"], step, checkpoint_args["output"], checkpoint_args["loss"], 
+                                checkpoint_args["bestLoss"], optim, checkpoint_args["scheduler"])
                     
                 X = torch.stack(X_batch).to(device)
 
