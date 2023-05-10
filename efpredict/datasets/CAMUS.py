@@ -153,9 +153,9 @@ class CAMUS(torchvision.datasets.VisionDataset):
             length = min(length, self.max_length)
 
         if f < length * self.period:
-            # Repeat frames if video is too short
-            repetitions = (length * self.period + f - 1) // f
-            video = np.tile(video, (1, repetitions, 1, 1))[:, :length * self.period]
+            # Pad video with frames filled with zeros if too short
+            # 0 represents the mean color (dark grey), since this is after normalization
+            video = np.concatenate((video, np.zeros((c, length * self.period - f, h, w), video.dtype)), axis=1)
             c, f, h, w = video.shape  # pylint: disable=E0633
 
 
