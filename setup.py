@@ -30,7 +30,9 @@ setuptools.setup(
         "scikit-image",
         "tqdm",
         "scikit-learn",
-        "pillow"
+        "pillow",
+        "nibabel",
+        "seaborn"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

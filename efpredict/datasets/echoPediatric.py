@@ -1,5 +1,5 @@
 # echo dataset data organisation from echonet repository
-# - ammended without segmentation
+# - ammended for echonet pediatric dataset
 # Kian Kordtomeikel (13/02/2023)
 # https://github.com/echonet/dynamic/tree/master/echonet/datasets
 

@@ -1,3 +1,8 @@
+# echo dataset data organisation from echonet repository
+# - ammended for CAMUS dataset
+# Kian Kordtomeikel (13/02/2023)
+# https://github.com/echonet/dynamic/tree/master/echonet/datasets
+
 """CAMUS Dataset."""
 
 import os
@@ -13,7 +18,7 @@ class CAMUS(torchvision.datasets.VisionDataset):
     def __init__(self, root=None,                 
                  split="all", target_type="EF",
                  mean=0., std=1.,
-                 length=16, period=1,
+                 length=32, period=1,
                  max_length=250,
                  percentage_dynamic_labelled=100,
                  num_augmented_videos=0,
