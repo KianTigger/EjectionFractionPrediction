@@ -162,11 +162,15 @@ class CAMUS(torchvision.datasets.VisionDataset):
             # Repeat frames if video is too short
             missing_frames = length * self.period - f
 
+            # Make sure we don't attempt to repeat more frames than are available
+            missing_frames = min(missing_frames, f)
+
             # Distribute the repeats evenly throughout the video
-            repeat_at = np.linspace(0, f, missing_frames, endpoint=False, dtype=np.int)
+            repeat_at = np.linspace(0, f-1, missing_frames, endpoint=True, dtype=np.int)
             video = np.insert(video, repeat_at, video[repeat_at], axis=1)
 
             c, f, h, w = video.shape  # pylint: disable=E0633
+
 
 
 
